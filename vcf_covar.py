@@ -332,9 +332,14 @@ def vcf_covar(vcf_in, covar_file, max_var):
                 in_header = False
                 vcf.add_header(header)
 
+                vcf.add_info('EXVAR', 1, 'Float', 'Explained variance in genotypes from covariates')
+
                 # sort the covariates according to the VCF sample order
                 sort_map = [vcf_samples.index(x) for x in covar[0]]
-                for i in xrange(len(covar)):
+                # for i in xrange(len(covar)):
+
+                # right now only handles one covariate (platform)
+                for i in [0]:
                      covar[i] = [x for (y,x) in sorted(zip(sort_map,covar[i]))]
                 # print covar
 
@@ -348,8 +353,9 @@ def vcf_covar(vcf_in, covar_file, max_var):
         # annotate based on read depth
         covar_v = map(float, covar[1])
 
-        if explained_variation(var, covar_v) <= max_var:
-            var.filter = 'PASS'
+        # if explained_variation(var, covar_v) <= max_var:
+        #     var.filter = 'PASS'
+        var.info['EXVAR'] = '%.3g' % explained_variation(var, covar_v)
 
         # write variant
         vcf_out.write(var.get_var_string() + '\n')
