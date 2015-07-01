@@ -338,10 +338,9 @@ def vcf_covar(vcf_in, covar_file, max_var):
                 sort_map = [vcf_samples.index(x) for x in covar[0]]
                 # for i in xrange(len(covar)):
 
-                # right now only handles one covariate (platform)
-                for i in [0]:
+
+                for i in xrange(len(covar)):
                      covar[i] = [x for (y,x) in sorted(zip(sort_map,covar[i]))]
-                # print covar
 
                 # write the output header
                 vcf_out.write(vcf.get_header() + '\n')
@@ -350,7 +349,8 @@ def vcf_covar(vcf_in, covar_file, max_var):
         v = line.rstrip().split('\t')
         var = Variant(v, vcf)
 
-        # annotate based on read depth
+        # vector of covariate signal
+        # right now only handles a single covariate (platform)
         covar_v = map(float, covar[1])
 
         # if explained_variation(var, covar_v) <= max_var:
