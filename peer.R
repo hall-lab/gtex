@@ -64,11 +64,10 @@ class(mat) <- 'numeric'
 mat.ds <- mat[seq(1, nrow(mat), ceiling(nrow(mat)/num.ds)),]
 
 ## prior to PEER correction
-## png(paste0(TISSUE, '.expr.clust.png'), width=8, height=8, res=150, units='in')
-## heatmap.2(as.matrix(mat.ds), distfun=function(x) dist(x,method='euclidian'), hclustfun=function(x) hclust(x,method='ward.D2'),
-          ## trace='none', dendrogram='both', Rowv=TRUE, Colv=TRUE, breaks=pairs.breaks, col=colorRampPalette(myCols), scale='none', symkey=T, na.color='grey', density.info='histogram', cexRow=0.2, cexCol=0.5, main=paste0(TISSUE, '\nexpr clustering'))
-## dev.off()
-
+png(paste0(OUT.PREFIX, '/', TISSUE, '.expr.clust.png'), width=8, height=8, res=150, units='in')
+heatmap.2(as.matrix(mat.ds), distfun=function(x) dist(x,method='euclidian'), hclustfun=function(x) hclust(x,method='ward.D2'),
+                    trace='none', dendrogram='both', Rowv=TRUE, Colv=TRUE, breaks=pairs.breaks, col=colorRampPalette(myCols), scale='none', symkey=T, na.color='grey', density.info='histogram', cexRow=0.2, cexCol=0.5, main=paste0(TISSUE, '\nexpr clustering'))
+dev.off()
 
 ## ----------------------------------------
 # peer correct
