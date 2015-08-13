@@ -56,7 +56,42 @@ imp.rowmean <- function (a) {
     return(imputed)
 }
 
+mahal.p <- function (x) {
+    # x <- x[which(apply(x, 1, function(z) sum(!is.na(z))) >= min.nsamp),]
+    x <- x[, which(colnames(x) %in% tissue.list)]
+    ## print(x)
+    ## print(which(colnames(x) %in% tissue.list))
+    ## print(ncol(x))
+    ## print(is.null(x))
+    x <- imp.col(x)
 
+    ## png(paste0('../plots/', prev.gene, '.heatmap.png'), height=8, width=8, units='in', res=150)
+    ## heatmap.2(x, trace='none', na.color='gray')
+    ## dev.off()
+
+    deg.fr <- ncol(x)
+    mean <- colMeans(x)
+    Sx <- cov(x)
+    D2 <- mahalanobis(x, mean, Sx, tol=1e-20)
+    ## pdf(paste0('../plots/', prev.gene, '.mahalanobis_d2.pdf'), height=8, width=8)
+    ## plot(density(D2, bw = 0.5), main=paste0('Mahalanobis distance, ', prev.gene))
+    ## rug(D2)
+    ## dev.off()
+
+    ## pdf(paste0('../plots/', prev.gene, '.qq.pdf'), height=8, width=8)        
+    ## qqplot(qchisq(ppoints(100), df = deg.fr), D2,
+    ##        main = expression("Qs-Q plot of Mahalanobis" * ~D^2 *
+    ##                          " vs. quantiles of" * ~ chi^2))
+    ## abline(0, 1, col = 'gray')
+    ## dev.off()
+
+    sig <- D2[D2>qchisq(0.999, ncol(x))]
+    if (length(sig) > 0) {
+        for (j in 1:length(sig)) {
+                cat(names(sig)[j], prev.gene, log(pchisq(sig[j], df=deg.fr, lower.tail=F), 10), '\n', sep='\t')
+        }
+    }
+}
 
 min.nsamp <- 10
 tissue.list <- c("Whole_Blood", "Cells_Transformed_fibroblasts", "Muscle_Skeletal", "Lung", "Artery_Tibial", "Adipose_Subcutaneous", "Thyroid", "Esophagus_Mucosa", "Skin_Sun_Exposed_Lower_leg", "Nerve_Tibial", "Esophagus_Muscularis", "Artery_Aorta", "Heart_Left_Ventricle")
@@ -93,40 +128,7 @@ while(length(line <- readLines(f,n=1)) > 0) {
         ## print('transpo')
         ## print(x)
         if (sum(colnames(x) %in% tissue.list) > 1) {
-            # x <- x[which(apply(x, 1, function(z) sum(!is.na(z))) >= min.nsamp),]
-            x <- x[, which(colnames(x) %in% tissue.list)]
-            ## print(x)
-            ## print(which(colnames(x) %in% tissue.list))
-            ## print(ncol(x))
-            ## print(is.null(x))
-            x <- imp.col(x)
-
-            ## png(paste0('../plots/', prev.gene, '.heatmap.png'), height=8, width=8, units='in', res=150)
-            ## heatmap.2(x, trace='none', na.color='gray')
-            ## dev.off()
-
-            deg.fr <- ncol(x)
-            mean <- colMeans(x)
-            Sx <- cov(x)
-            D2 <- mahalanobis(x, mean, Sx, tol=1e-20)
-            ## pdf(paste0('../plots/', prev.gene, '.mahalanobis_d2.pdf'), height=8, width=8)
-            ## plot(density(D2, bw = 0.5), main=paste0('Mahalanobis distance, ', prev.gene))
-            ## rug(D2)
-            ## dev.off()
-
-            ## pdf(paste0('../plots/', prev.gene, '.qq.pdf'), height=8, width=8)        
-            ## qqplot(qchisq(ppoints(100), df = deg.fr), D2,
-            ##        main = expression("Qs-Q plot of Mahalanobis" * ~D^2 *
-            ##                          " vs. quantiles of" * ~ chi^2))
-            ## abline(0, 1, col = 'gray')
-            ## dev.off()
-
-            sig <- D2[D2>qchisq(0.999, ncol(x))]
-            if (length(sig) > 0) {
-                for (j in 1:length(sig)) {
-                        cat(names(sig)[j], prev.gene, log(pchisq(sig[j], df=deg.fr, lower.tail=F), 10), '\n', sep='\t')
-                }
-            }
+            mahal.p(x)
         }
         x <- NULL
     }
