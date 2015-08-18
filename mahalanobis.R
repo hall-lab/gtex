@@ -135,6 +135,16 @@ while(length(line <- readLines(f,n=1)) > 0) {
     prev.gene <- gene
     x <- rbind(x, v)
 }
+# calc the last one too
+rownames(x) <- x[,2]
+colnames(x) <- header
+x <- x[,-(1:2)]
+x <- as.matrix(x)
+suppressWarnings(class(x) <- 'numeric')
+x <- t(x)
+if (sum(colnames(x) %in% tissue.list) > 1) {
+    mahal.p(x)
+}
 
 
 
