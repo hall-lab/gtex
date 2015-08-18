@@ -5,7 +5,7 @@
 
 $linenum = 1;
 $filenum = 0;
-$linesperfile = 205; ##CHANGEME
+$linesperfile = 800; ##CHANGEME
 
 open(OUT,"> split00.vcf") || die "Could not open output file 00: $!";
 
