@@ -38,15 +38,19 @@ description: select columns from a file by header names")
 
 # primary function
 def row_stats(lead_cols, pass_prefix, query_stats, source):
+    in_header = True
+    header_v = []
     for line in source:
         data = []
         stats = []
 
-        if pass_prefix is not None and  line.startswith(pass_prefix):
-            print line.rstrip()
+        v = line.rstrip().split('\t')
+
+        if in_header:
+            header_v = v[lead_cols:]
+            in_header = False
             continue
         else:
-            v = line.rstrip().split('\t')
             for i in xrange(lead_cols, len(v)):
                 # print v[i]
                 try:
@@ -79,9 +83,25 @@ def row_stats(lead_cols, pass_prefix, query_stats, source):
                         s = np.prod(data)
                     elif q == 'count':
                         s = len(data)
-                    elif q == 'median_col':
-                        median = np.median(data)
-                        s = data.index(median)
+                    elif q == 'min_col':
+                        val = min(data)
+                        s = header_v[data.index(val)]
+                    elif q == 'max_col':
+                        val = max(data)
+                        s = header_v[data.index(val)]
+                    elif q == 'median_excl_min':
+                        if len(data) < 2:
+                            s = 'NA'
+                        else:
+                            val_index = data.index(min(data))
+                            s = np.median( data[:val_index] + data[(val_index + 1):] )
+                    elif q == 'median_excl_max':
+                        if len(data) < 2:
+                            s = 'NA'
+                        else:
+                            val_index = data.index(max(data))
+                            s = np.median( data[:val_index] + data[(val_index + 1):] )
+
                     stats.append(s)
         
             print '\t'.join(v[x] for x in xrange(lead_cols)) + '\t' + '\t'.join(map(str, stats))
@@ -98,7 +118,7 @@ def main():
 
     query_stats = args.query_stats.split(',')
 
-    allowed_stats = ['mean', 'median', 'min', 'max', 'sum', 'product', 'count', 'median_col']
+    allowed_stats = ['mean', 'median', 'min', 'max', 'sum', 'product', 'count', 'min_col', 'max_col', 'median_excl_max', 'median_excl_min']
     for q in query_stats:
         if q not in allowed_stats:
             sys.stderr.write('Error: %s not in allowed stats (%s)\n' % (q, ','.join(allowed_stats)))
