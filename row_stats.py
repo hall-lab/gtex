@@ -79,9 +79,6 @@ def row_stats(lead_cols, pass_prefix, query_stats, source):
                         s = np.prod(data)
                     elif q == 'count':
                         s = len(data)
-                    elif q == 'median_col':
-                        median = np.median(data)
-                        s = data.index(median)
                     stats.append(s)
         
             print '\t'.join(v[x] for x in xrange(lead_cols)) + '\t' + '\t'.join(map(str, stats))
@@ -98,7 +95,7 @@ def main():
 
     query_stats = args.query_stats.split(',')
 
-    allowed_stats = ['mean', 'median', 'min', 'max', 'sum', 'product', 'count', 'median_col']
+    allowed_stats = ['mean', 'median', 'min', 'max', 'sum', 'product', 'count']
     for q in query_stats:
         if q not in allowed_stats:
             sys.stderr.write('Error: %s not in allowed stats (%s)\n' % (q, ','.join(allowed_stats)))

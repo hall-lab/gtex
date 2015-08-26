@@ -41,6 +41,7 @@ def row_stats(lead_cols, pass_prefix, query_stats, source):
     in_header = True
     header_v = []
     for line in source:
+        raw_data = []
         data = []
         stats = []
 
@@ -55,6 +56,7 @@ def row_stats(lead_cols, pass_prefix, query_stats, source):
                 # print v[i]
                 try:
                     data.append(float(v[i]))
+                    raw_data.append(v[i])
                 except ValueError:
                     continue
 
@@ -85,10 +87,12 @@ def row_stats(lead_cols, pass_prefix, query_stats, source):
                         s = len(data)
                     elif q == 'min_col':
                         val = min(data)
-                        s = header_v[data.index(val)]
+                        raw_val = raw_data[data.index(val)]
+                        s = header_v[v[lead_cols:].index(raw_val)]
                     elif q == 'max_col':
                         val = max(data)
-                        s = header_v[data.index(val)]
+                        raw_val = raw_data[data.index(val)]
+                        s = header_v[v[lead_cols:].index(raw_val)]
                     elif q == 'median_excl_min':
                         if len(data) < 2:
                             s = 'NA'
