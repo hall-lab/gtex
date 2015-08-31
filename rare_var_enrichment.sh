@@ -17,6 +17,8 @@ NSAMP_MAX=2
 
 while read line
 do
+    # echo $line
+
     SAMPLE=`echo "$line" | awk '{ print $2 }'`
     GENE=`echo "$line" | awk '{ print $3 }'`
     TISSUE=`echo "$line" | awk '{ print $4 }'`
