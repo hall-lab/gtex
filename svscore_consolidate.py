@@ -75,6 +75,7 @@ def svscore_consol(vcf):
                 except KeyError:
                     continue
 
+            # get the max score excluding truncation
             for s in svscore_trunc_list:
                 try:
                     svscore_max = max(svscore_max, float(info[s]))
