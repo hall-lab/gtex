@@ -46,20 +46,12 @@ description: correlate variants and genotypes")
     # send back the user input
     return args
 
-# primary function
-def var_gt_corr(a_vcf,
-                b_vcf,
-                a_field,
-                b_field,
-                a_vars,
-                b_vars,
-                samp_set):
+# 
+def parse_genotypes(vcf_file, samp_set, var_list, field, X):
 
-    X = {} # dict of genotypes for each sample, key is variant id
-    # var_ids = []
+    var_counter = 0
     samp_cols = []
-
-    for line in a_vcf:
+    for line in vcf_file:
         if line[:2] == '##':
             continue
 
@@ -72,12 +64,15 @@ def var_gt_corr(a_vcf,
             continue
 
         var_id = v[2]
-        
-        if var_id not in a_vars:
+
+        if var_id not in var_list:
             continue
 
+        # iterate counter
+        var_counter += 1
+
         # read the genotypes
-        if a_field == 'GT':
+        if field == 'GT':
             gt_list = []
             for i in samp_cols:
                 gt_str = v[i].split(':')[0]
@@ -95,11 +90,11 @@ def var_gt_corr(a_vcf,
             fmt = v[8].split(':')
             field_idx = -1
             for i in xrange(len(fmt)):
-                if fmt[i] == a_field:
+                if fmt[i] == field:
                     field_idx = i
                     break
             if field_idx == -1:
-                sys.stderr.write("Format field '%s' not found for variant %s\n" % (a_field, v[2]))
+                sys.stderr.write("Format field '%s' not found for variant %s\n" % (field, v[2]))
                 exit(1)
 
             gt_list = []
@@ -107,40 +102,72 @@ def var_gt_corr(a_vcf,
                 gt_str = v[i].split(':')[field_idx]
 
                 # if no info for the field, fall back to regular genotype
-                if gt_str == '.' or '.' in v[i].split(':')[0]:
+                if gt_str == '.':
                     gt_list.append(-1)
                 else:
                     gt_list.append(float(gt_str))
 
             X[var_id] = gt_list
-        print gt_list
-
-    if len(a_vars) != len(X):
+        # print gt_list
+    if len(var_list) != var_counter:
         sys.stderr.write("Warning, missing variants\n")
-        exit(1)
+        # exit(1)
 
-    # empty array of r values (correlation)
-    R = [[0.0] * len(var_list) for i in xrange(len(var_list))]
 
-    for i in xrange(len(var_list)):
-        for j in xrange(i,len(var_list)):
-            var_pair = np.array([X[var_list[i]], X[var_list[j]]])
 
-            # remove missing genotypes
-            var_pair = var_pair[:, var_pair[0]!=-1]
+# primary function
+def var_gt_corr(a_vcf,
+                b_vcf,
+                a_field,
+                b_field,
+                a_vars,
+                b_vars,
+                samp_set):
 
-            # ensure non-uniformity in genotype and read depth
-            if len(np.unique(var_pair[0,:])) > 1 and len(np.unique(var_pair[1,:])) > 1:
-                # calculate regression
-                (slope, intercept, r_value, p_value, std_err) = stats.linregress(var_pair)
-            else:
-                r_value = 'nan'
-            R[i][j] = r_value
-            R[j][i] = r_value
 
-            # print var_list[i], var_list[j], r_value
-    for i in xrange(len(R)):
-        print '\t'.join(['%0.6g' % x ** 2 for x in R[i]])
+    # var_ids = []
+
+    X = {} # dict of genotypes for each sample, key is variant id
+
+    # parse the genotypes of each file
+    parse_genotypes(a_vcf, samp_set, a_vars, a_field, X)
+    parse_genotypes(b_vcf, samp_set, b_vars, b_field, X)
+    print len(X)
+
+
+    # # empty array of r values (correlation)
+    # R = [[0.0] * len(var_list) for i in xrange(len(var_list))]
+
+    for i in xrange(len(a_vars)):
+        var_pair = np.array([X[a_vars[i]], X[b_vars[i]]])
+
+        # remove missing genotypes
+        var_pair = var_pair[:, var_pair[0]!=-1]
+
+        # print var_pair
+
+        # ensure non-uniformity in genotype and read depth
+        if len(np.unique(var_pair[0,:])) > 1 and len(np.unique(var_pair[1,:])) > 1:
+            # calculate regression
+            (slope, intercept, r_value, p_value, std_err) = stats.linregress(var_pair)
+
+            print a_vars[i], b_vars[i], r_value, slope
+        else:
+            r_value = 'nan'
+
+        # write the scatterplot to a file
+        f = open('data/null/%s_%s.txt' % (a_vars[i], b_vars[i]), 'w')
+        np.savetxt(f, np.transpose(var_pair), delimiter='\t')
+        f.close()
+
+
+        # R[i][j] = r_value
+        # R[j][i] = r_value
+
+
+
+    # for i in xrange(len(R)):
+    #     print '\t'.join(['%0.6g' % x ** 2 for x in R[i]])
 
     return
 
@@ -190,8 +217,8 @@ def main():
                 samp_set)
 
     # close the files
-    args.a_vcf.close()
-    args.b_vcf.close()
+    a_vcf.close()
+    b_vcf.close()
 
 
 # initialize the script
