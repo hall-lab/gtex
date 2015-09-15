@@ -109,7 +109,7 @@ def parse_genotypes(vcf_file, samp_set, var_list, field, X):
 
             X[var_id] = gt_list
         # print gt_list
-    if len(var_list) != var_counter:
+    if len(set(var_list)) != var_counter:
         sys.stderr.write("Warning, missing variants\n")
         # exit(1)
 
@@ -132,8 +132,6 @@ def var_gt_corr(a_vcf,
     # parse the genotypes of each file
     parse_genotypes(a_vcf, samp_set, a_vars, a_field, X)
     parse_genotypes(b_vcf, samp_set, b_vars, b_field, X)
-    print len(X)
-
 
     # # empty array of r values (correlation)
     # R = [[0.0] * len(var_list) for i in xrange(len(var_list))]
@@ -155,10 +153,10 @@ def var_gt_corr(a_vcf,
         else:
             r_value = 'nan'
 
-        # write the scatterplot to a file
-        f = open('data/null/%s_%s.txt' % (a_vars[i], b_vars[i]), 'w')
-        np.savetxt(f, np.transpose(var_pair), delimiter='\t')
-        f.close()
+        # # write the scatterplot to a file
+        # f = open('data/contained.f05/%s_%s.txt' % (a_vars[i], b_vars[i]), 'w')
+        # np.savetxt(f, np.transpose(var_pair), delimiter='\t')
+        # f.close()
 
 
         # R[i][j] = r_value
