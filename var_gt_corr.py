@@ -149,7 +149,7 @@ def var_gt_corr(a_vcf,
             # calculate regression
             (slope, intercept, r_value, p_value, std_err) = stats.linregress(var_pair)
 
-            print a_vars[i], b_vars[i], r_value, slope
+            print '\t'.join(map(str, [a_vars[i], b_vars[i], r_value, slope]))
         else:
             r_value = 'nan'
 
