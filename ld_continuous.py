@@ -109,17 +109,16 @@ def ld_continuous(vcf_in, var_list, samp_set, field):
 
     for i in xrange(len(var_list)):
         for j in xrange(i,len(var_list)):
+            # extract the variant pair from the dictionary
             var_pair = np.array([X[var_list[i]], X[var_list[j]]])
 
-            # remove missing genotypes
-            var_pair = var_pair[:, var_pair[0]!=-1]
+            # print var_pair
 
-            # ensure non-uniformity in genotype and read depth
-            if len(np.unique(var_pair[0,:])) > 1 and len(np.unique(var_pair[1,:])) > 1:
-                # calculate regression
-                (slope, intercept, r_value, p_value, std_err) = stats.linregress(var_pair)
-            else:
-                r_value = 'nan'
+            # calculate regression
+            (slope, intercept, r_value, p_value, std_err) = stats.linregress(var_pair)
+
+            # print 'r_value:', r_value
+
             R[i][j] = r_value
             R[j][i] = r_value
 
