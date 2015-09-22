@@ -93,7 +93,7 @@ def ld_continuous(vcf_in, var_list, samp_set, field):
                 gt_str = v[i].split(':')[field_idx]
 
                 # if no info for the field, fall back to regular genotype
-                if gt_str == '.' or '.' in v[i].split(':')[0]:
+                if gt_str == '.':
                     gt_list.append(-1)
                 else:
                     gt_list.append(float(gt_str))
