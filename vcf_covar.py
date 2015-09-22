@@ -23,6 +23,8 @@ description: filter variants by genotype correlation with covariates")
     parser.add_argument('-i', '--input', metavar='VCF', dest='vcf_in', type=argparse.FileType('r'), default=None, help='VCF input [stdin]')
     parser.add_argument('-c', '--covar', metavar='FILE', dest='covar', type=argparse.FileType('r'), default=None, required=True, help='tab delimited file of covariates')
     parser.add_argument('-v', '--max_var', metavar='FLOAT', dest='max_var', type=float, default=0.1, help='maximum genotype variance explained by covariates for variant to PASS filtering [0.1]')
+    parser.add_argument('-f', '--field', metavar='STR', dest='field', type=str, default='GT', help='genotype field to assess for correlation [GT]')
+
 
     # parse the arguments
     args = parser.parse_args()
@@ -270,10 +272,10 @@ class Genotype(object):
         return ':'.join(map(str,g_list))
 
 # returned the portion of variance explained by a linear regression
-def explained_variation(var, covar_v):
+def explained_variation(var, covar_v, field):
     gt_list = []
     for s in var.sample_list:
-        gt_str = var.genotype(s).get_format('GT')
+        gt_str = var.genotype(s).get_format(field)
         if '.' in gt_str:
             gt_list.append(-1)
             continue
@@ -310,7 +312,7 @@ def explained_variation(var, covar_v):
         return 0
 
 # primary function
-def vcf_covar(vcf_in, covar_file, max_var):
+def vcf_covar(vcf_in, covar_file, max_var, field):
     # read covar file as matrix
     covar = []
     for line in covar_file:
@@ -355,7 +357,7 @@ def vcf_covar(vcf_in, covar_file, max_var):
 
         # if explained_variation(var, covar_v) <= max_var:
         #     var.filter = 'PASS'
-        var.info['EXVAR'] = '%.3g' % explained_variation(var, covar_v)
+        var.info['EXVAR'] = '%.3g' % explained_variation(var, covar_v, field)
 
         # write variant
         vcf_out.write(var.get_var_string() + '\n')
@@ -372,7 +374,7 @@ def main():
     args = get_args()
 
     # call primary function
-    vcf_covar(args.vcf_in, args.covar, args.max_var)
+    vcf_covar(args.vcf_in, args.covar, args.max_var, args.field)
 
     # close the files
     args.vcf_in.close()
