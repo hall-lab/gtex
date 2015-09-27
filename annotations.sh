@@ -105,10 +105,31 @@ curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeRegDnas
 curl -OL http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeRegDnaseClustered/wgEncodeRegDnaseClusteredSources.tab
 
 
+# ---------------------------------------------
+# Mobile elements
+# -------------------------------------
+# 2015-06-05
+# generate repeat elements track (http://genome.ucsc.edu/cgi-bin/hgTables)
 
+# less than 200 millidiv
+curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/rmsk.txt.gz \
+     | gzip -cdfq \
+     | awk '{ gsub("^chr", "", $6); if ($3<200) print $6,$7,$8,$12"|"$13"|"$11,$3,$10 }' OFS="\t" \
+     | sort -k1,1V -k2,2n -k3,3n \
+     | bgzip -c > repeatMasker.recent.lt200millidiv.b37.sorted.bed.gz
+tabix -p bed repeatMasker.recent.lt200millidiv.b37.sorted.bed.gz
 
+# greater than or equal to 200 millidiv
+curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/rmsk.txt.gz \
+     | gzip -cdfq \
+     | awk '{ gsub("^chr", "", $6); if ($3>=200) print $6,$7,$8,$12"|"$13"|"$11,$3,$10 }' OFS="\t" \
+     | sort -k1,1V -k2,2n -k3,3n \
+     | bgzip -c > repeatMasker.ancient.gte200millidiv.b37.sorted.bed.gz
+tabix -p bed repeatMasker.ancient.gte200millidiv.b37.sorted.bed.gz
 
-
+# extract only the SINEs LINEs and SVAs from the 
+zcat repeatMasker.recent.lt200millidiv.b37.sorted.bed.gz | awk '$4~"LINE" || $4~"SINE" || $4~"SVA"' \
+    | bgzip -c > repeatMasker.recent.lt200millidiv.LINE_SINE_SVA.b37.sorted.bed.gz
 
 
 
