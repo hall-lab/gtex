@@ -24,9 +24,9 @@ while (<>) {
   if ($linenum >= $linesperfile && /SVTYPE=BND/) {
     @split = (split(/\s+/));
     @lastsplit = split(/\s+/,$lines[$#lines]);
-    ($currentid) = ($split[2] =~ /^(\d+)_[12]$/);
-    ($lastid) = ($lastsplit[2] =~ /^(\d+)(?:_[12])?$/);
-    $split = ($currentid == $lastid);
+    ($currentid) = ($split[2] =~ /^([\d\w]+)_[12]$/);
+    ($lastid) = ($lastsplit[2] =~ /^([\d\w]+)(?:_[12])?$/);
+    $split = ($currentid eq $lastid);
   } else {
     $split = ($linenum >= $linesperfile);
   }
