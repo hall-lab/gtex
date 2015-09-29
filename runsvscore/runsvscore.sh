@@ -4,7 +4,7 @@
 #rsync -avP /gscmnt/gc2719/halllab/users/lganel/SVScore/gtex_splits/generatesvscorecalls.pl .
 
 echo "Splitting file..."
-awk '$0~"^#" { print $0; next } { print $0 | "sort -k3,3" }' $1 | perl split.pl # Split the VCF into chunks of ~1000 variants + header
+zless $1 | awk '$0~"^#" { print $0; next } { print $0 | "sort -k3,3" }' | python split_vcf.py # Split the VCF into chunks of ~1000 variants + header
 
 echo "Generating calls...";
 perl generatesvscorecalls.pl . > svscorecalls.sh # Create bomb calls
