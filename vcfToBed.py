@@ -99,7 +99,7 @@ def vcf_to_bed(vcf_file):
             bed_list.append(bed)
 
         for b in bed_list:
-            print '\t'.join(map(str, b)) + '\t' +  '\t'.join(v[5:])
+            print '\t'.join(map(str, b)) + '\t' +  '\t'.join(v[3:])
     
     return
 
