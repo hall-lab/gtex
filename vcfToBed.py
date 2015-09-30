@@ -69,7 +69,7 @@ def vcf_to_bed(vcf_file):
         if info['SVTYPE'] == 'BND':
             chrom = v[0]
             start = int(v[1]) - 1
-            end = int(v[1]) - 1
+            end = int(v[1])
             event = info['EVENT']
             bed = [chrom, start, end, event]
             bed_list.append(bed)
