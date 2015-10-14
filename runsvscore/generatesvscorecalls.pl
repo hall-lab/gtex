@@ -3,6 +3,7 @@
 opendir(CWD, $ARGV[0]) || die "Could not open cwd: $!";
 @files = grep {/^split\d\d\d\.vcf$/} readdir CWD;
 
+# make the supporting files first, and bail
 print "/gscmnt/gc2719/halllab/users/cchiang/src/SVScore/svscore.pl -s -g /gscmnt/gc2719/halllab/users/lganel/SVScore/gencode.v19.genes.bed -e /gscmnt/gc2719/halllab/users/lganel/SVScore/gencode.v19.exons.bed -n 4 -c /gscmnt/gc2719/halllab/users/lganel/SVScore/whole_genome_SNVs.tsv.gz -o max split000.vcf\n";
 
 foreach (sort @files) {
