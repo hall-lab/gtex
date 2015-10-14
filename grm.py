@@ -122,6 +122,9 @@ def make_grm(vcf_in, var_set, samp_set, field):
     for j in xrange(S):
         for k in xrange(j + 1):
             gr = 0.0
+            a = 0.0
+            b = 0.0
+            c = 0.0
             num_obs = 0
             # print j,k
             # print grm[j][k]
@@ -129,8 +132,12 @@ def make_grm(vcf_in, var_set, samp_set, field):
                 if (p[i] > 0 and p[i] < 1
                     and  X[i][j] != -1 and X[i][k] != -1):
                     num_obs += 1
-                    gr += (X[i][j] - 2 * p[i]) * (X[i][k] - 2 * p[i]) / ( 2 * p[i] * (1 - p[i]))
-            gr = gr / float(N)
+                    # gr += (X[i][j] - 2 * p[i]) * (X[i][k] - 2 * p[i]) / ( 2 * p[i] * (1 - p[i]))
+                    a += (X[i][j] - 2 * p[i]) * (X[i][k] - 2 * p[i])
+                    b += (X[i][j] - 2 * p[i]) ** 2
+                    c += (X[i][k] - 2 * p[i]) ** 2
+            gr = a / ((b * c) ** 0.5)
+            # gr = gr / float(N)
 
             print "%s\t%s\t%s\t%.6g" % (j + 1, k + 1, num_obs, gr)
 
