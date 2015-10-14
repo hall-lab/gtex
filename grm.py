@@ -54,7 +54,7 @@ def make_grm(vcf_in, var_set, samp_set, field):
 
         if line[0] == "#":
             for i in xrange(9,len(v)):
-                if v[i] in samp_set:
+                if v[i] in samp_set or len(samp_set) == 0:
                     samp_cols.append(i)
             continue
         
@@ -93,12 +93,10 @@ def make_grm(vcf_in, var_set, samp_set, field):
                 gt_str = v[i].split(':')[field_idx]
 
                 # if no info for the field, fall back to regular genotype
-                if gt_str == '.':
-                    or '.' in v[i].split(':')[0]:
+                if gt_str == '.' or '.' in v[i].split(':')[0]:
                     gt_list.append(-1)
                 else:
                     gt_list.append(float(gt_str))
-
 
             X.append(gt_list)
             var_ids.append(v[2])
@@ -107,31 +105,20 @@ def make_grm(vcf_in, var_set, samp_set, field):
     S = len(X[0]) # number of samples
 
     p = [] # population allele frequency of alternate allele
-    for i in xrange(len(X)):
-        h = [g for g in X[i] if g != -1]
-        p.append(sum(h) / (2.0 * len(h)))
+    d = [] # denominator to normalize variant
+    for i in xrange(len(X)): # each i is a different variant
+        gt = X[i]
+        informative_gt = [g for g in X[i] if g != -1]
+        p_i = sum(informative_gt) / (2.0 * len(informative_gt))
+        p.append(p_i)
 
-        print '\t'.join(map(str, [var_ids[i], p[i], len(h)]))
+        # fill missing genotypes with the population mean
+        if X[i] == -1: X[i] = p_i
 
-    r = [] # pop harmonic mean
-
-
-    # for i in xrange(len(p)):
-
-
-    # print X
-
-
-    # print p
-
-
-    # grm = [[0.0] * S for i in xrange(S)]
-
-
-    # print grm
-    # for i in xrange(len(grm)):
-    #     print '\t'.join(map(str, grm[i]))
-
+        diff = [(g - p_i) for g in gt]
+        d_i = sum([d_j ** 2 for d_j in diff]) ** 0.5
+        d.append(d_i)
+                         
     for j in xrange(S):
         for k in xrange(j + 1):
             gr = 0.0
@@ -139,7 +126,8 @@ def make_grm(vcf_in, var_set, samp_set, field):
             # print j,k
             # print grm[j][k]
             for i in xrange(N):
-                if X[i][j] != -1 and X[i][k] != -1:
+                if (p[i] > 0 and p[i] < 1
+                    and  X[i][j] != -1 and X[i][k] != -1):
                     num_obs += 1
                     gr += (X[i][j] - 2 * p[i]) * (X[i][k] - 2 * p[i]) / ( 2 * p[i] * (1 - p[i]))
             gr = gr / float(N)
