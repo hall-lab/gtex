@@ -2,6 +2,7 @@
 
 import argparse, sys
 # import math, time, re
+import gzip
 import numpy as np
 # from scipy import stats
 # from collections import Counter
@@ -24,6 +25,8 @@ description: generate a genetic relatedness matrix from a VCF")
     parser.add_argument('-v', '--variants', metavar='FILE', dest='variants_file', type=argparse.FileType('r'), default=None, required=False, help='list of variants to include')
     parser.add_argument('-s', '--samples', metavar='FILE', dest='samples_file', type=argparse.FileType('r'), default=None, required=False, help='list of samples to include')
     parser.add_argument('-f', '--field', metavar='STR', dest='field', default='GT', help='specify genotyping format field [GT]')
+    parser.add_argument('-a', '--algorithm', metavar='STR', dest='algorithm', default='mott', help='algorithm to use (mott, visscher) [mott]')
+    parser.add_argument('-o', '--out', metavar='STR', dest='out_prefix', required=True, help='output file prefix')
     # parser.add_argument('-c', '--covar', metavar='FILE', dest='covar', type=argparse.FileType('r'), default=None, required=True, help='tab delimited file of covariates')
     # parser.add_argument('-v', '--max_var', metavar='FLOAT', dest='max_var', type=float, default=0.1, help='maximum genotype variance explained by covariates for variant to PASS filtering [0.1]')
 
@@ -40,12 +43,52 @@ description: generate a genetic relatedness matrix from a VCF")
     # send back the user input
     return args
 
+# mott algorithm
+def mott(X, N, p, j, k):
+    gr = 0.0
+    a = 0.0
+    b = 0.0
+    c = 0.0
+    num_obs = 0
+
+    for i in xrange(N):
+        if (p[i] > 0 and p[i] < 1
+            and  X[i][j] != -1 and X[i][k] != -1):
+            num_obs += 1
+
+            a += (X[i][j] - 2 * p[i]) * (X[i][k] - 2 * p[i])
+            b += (X[i][j] - 2 * p[i]) ** 2
+            c += (X[i][k] - 2 * p[i]) ** 2
+    gr = a / ((b * c) ** 0.5)
+    return (gr, num_obs)
+
+# visscher algorithm
+def visscher(X, N, p, j, k):
+    gr = 0.0
+    num_obs = 0
+
+    for i in xrange(N):
+        if (p[i] > 0 and p[i] < 1
+            and  X[i][j] != -1 and X[i][k] != -1):
+            num_obs += 1
+
+            gr += (X[i][j] - 2 * p[i]) * (X[i][k] - 2 * p[i]) / ( 2 * p[i] * (1 - p[i]))
+
+    gr = gr / float(N)
+    return (gr, num_obs)
+
+
 # primary function
-def make_grm(vcf_in, var_set, samp_set, field):
+def make_grm(vcf_in, var_set, samp_set, field, algorithm, out_prefix):
+    out_grm = gzip.open("%s.grm.gz" % out_prefix, 'wb')
+    out_id = open("%s.grm.id" % out_prefix, 'w')
+
+
     X = [] # matrix of genotypes for each sample
     var_ids = []
     samp_cols = []
 
+    sys.stderr.write("Reading genotypes... ")
     for line in vcf_in:
         if line[:2] == '##':
             continue
@@ -56,6 +99,7 @@ def make_grm(vcf_in, var_set, samp_set, field):
             for i in xrange(9,len(v)):
                 if v[i] in samp_set or len(samp_set) == 0:
                     samp_cols.append(i)
+                    out_id.write("%s\t%s\n" % (v[i], v[i]))
             continue
         
         if v[2] not in var_set:
@@ -100,16 +144,24 @@ def make_grm(vcf_in, var_set, samp_set, field):
 
             X.append(gt_list)
             var_ids.append(v[2])
+    # close the id file
+    out_id.close()
 
+    # done reading genotypes
+    sys.stderr.write("done\n")
+
+    sys.stderr.write("Calculating variant statistics... ")
     N = len(X) # number of variants
     S = len(X[0]) # number of samples
-
     p = [] # population allele frequency of alternate allele
     d = [] # denominator to normalize variant
     for i in xrange(len(X)): # each i is a different variant
         gt = X[i]
         informative_gt = [g for g in X[i] if g != -1]
-        p_i = sum(informative_gt) / (2.0 * len(informative_gt))
+        try:
+            p_i = sum(informative_gt) / (2.0 * len(informative_gt))
+        except ZeroDivisionError:
+            p_i = -1
         p.append(p_i)
 
         # fill missing genotypes with the population mean
@@ -118,31 +170,29 @@ def make_grm(vcf_in, var_set, samp_set, field):
         diff = [(g - p_i) for g in gt]
         d_i = sum([d_j ** 2 for d_j in diff]) ** 0.5
         d.append(d_i)
-                         
+    sys.stderr.write("done\n")
+
+    sys.stderr.write("Calculating genetic relatedness...\n")
     for j in xrange(S):
+        sys.stderr.write("%s\n" % (j + 1))
         for k in xrange(j + 1):
-            gr = 0.0
-            a = 0.0
-            b = 0.0
-            c = 0.0
-            num_obs = 0
             # print j,k
             # print grm[j][k]
-            for i in xrange(N):
-                if (p[i] > 0 and p[i] < 1
-                    and  X[i][j] != -1 and X[i][k] != -1):
-                    num_obs += 1
-                    # gr += (X[i][j] - 2 * p[i]) * (X[i][k] - 2 * p[i]) / ( 2 * p[i] * (1 - p[i]))
-                    a += (X[i][j] - 2 * p[i]) * (X[i][k] - 2 * p[i])
-                    b += (X[i][j] - 2 * p[i]) ** 2
-                    c += (X[i][k] - 2 * p[i]) ** 2
-            gr = a / ((b * c) ** 0.5)
-            # gr = gr / float(N)
 
-            print "%s\t%s\t%s\t%.6g" % (j + 1, k + 1, num_obs, gr)
+            if algorithm == 'mott':
+                (gr, num_obs) = mott(X, N, p, j, k)
+            elif algorithm == 'visscher':
+                (gr, num_obs) = visscher(X, N, p, j, k)
 
-    # for i in xrange(len(grm)):
-    #     print '\t'.join(map(str, grm[i]))
+            # print "%s\t%s\t%s\t%.6g" % (j + 1, k + 1, num_obs, gr)
+            out_grm.write("%s\t%s\t%s\t%.8g\n" % (j + 1, k + 1, num_obs, gr))
+
+    # close the grm file
+    out_grm.close()
+    
+    # done calculating genetic relatedness
+    sys.stderr.write("done\n")
+
     return
 
 # --------------------------------------
@@ -167,8 +217,13 @@ def main():
             samp_set.add(v[0])
         args.samples_file.close()
 
+    allowed_algorithms = ['mott', 'visscher']
+    if args.algorithm not in allowed_algorithms:
+        sys.stderr.write('Error: algorithm "%s" not recognized. Choose from [%s]\n' % (args.algorithm, ','.join(allowed_algorithms)))
+        exit(1)
+
     # call primary function
-    make_grm(args.vcf_in, var_set, samp_set, args.field)
+    make_grm(args.vcf_in, var_set, samp_set, args.field, args.algorithm, args.out_prefix)
 
     # close the files
     args.vcf_in.close()
