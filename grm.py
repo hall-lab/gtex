@@ -26,6 +26,7 @@ description: generate a genetic relatedness matrix from a VCF")
     parser.add_argument('-s', '--samples', metavar='FILE', dest='samples_file', type=argparse.FileType('r'), default=None, required=False, help='list of samples to include')
     parser.add_argument('-f', '--field', metavar='STR', dest='field', default='GT', help='specify genotyping format field [GT]')
     parser.add_argument('-a', '--algorithm', metavar='STR', dest='algorithm', default='mott', help='algorithm to use (mott, visscher) [mott]')
+    parser.add_argument('-z', '--znorm', dest='znorm', action='store_true', help='z-normalize genotypes prior to GRM')
     parser.add_argument('-o', '--out', metavar='STR', dest='out_prefix', required=True, help='output file prefix')
     # parser.add_argument('-c', '--covar', metavar='FILE', dest='covar', type=argparse.FileType('r'), default=None, required=True, help='tab delimited file of covariates')
     # parser.add_argument('-v', '--max_var', metavar='FLOAT', dest='max_var', type=float, default=0.1, help='maximum genotype variance explained by covariates for variant to PASS filtering [0.1]')
@@ -52,7 +53,7 @@ def mott(X, N, p, j, k):
     num_obs = 0
 
     for i in xrange(N):
-        if (p[i] > 0 and p[i] < 1
+        if (len(set(X[i])) != 1
             and  X[i][j] != -1 and X[i][k] != -1):
             num_obs += 1
 
@@ -68,7 +69,7 @@ def visscher(X, N, p, j, k):
     num_obs = 0
 
     for i in xrange(N):
-        if (p[i] > 0 and p[i] < 1
+        if (len(set(X[i])) != 1
             and  X[i][j] != -1 and X[i][k] != -1):
             num_obs += 1
 
@@ -79,7 +80,13 @@ def visscher(X, N, p, j, k):
 
 
 # primary function
-def make_grm(vcf_in, var_set, samp_set, field, algorithm, out_prefix):
+def make_grm(vcf_in,
+             var_set,
+             samp_set,
+             field,
+             algorithm,
+             znorm,
+             out_prefix):
     out_grm = gzip.open("%s.grm.gz" % out_prefix, 'wb')
     out_id = open("%s.grm.id" % out_prefix, 'w')
 
@@ -137,10 +144,18 @@ def make_grm(vcf_in, var_set, samp_set, field, algorithm, out_prefix):
                 gt_str = v[i].split(':')[field_idx]
 
                 # if no info for the field, fall back to regular genotype
-                if gt_str == '.' or '.' in v[i].split(':')[0]:
+                if gt_str == '.':
                     gt_list.append(-1)
                 else:
                     gt_list.append(float(gt_str))
+
+            if znorm:
+                gt_mean = np.mean(gt_list)
+                gt_std = np.std(gt_list)
+                if gt_std == 0:
+                    gt_list = [0 for gt in gt_list]
+                else:
+                    gt_list = [(gt - gt_mean) / gt_std for gt in gt_list]
 
             X.append(gt_list)
             var_ids.append(v[2])
@@ -223,7 +238,12 @@ def main():
         exit(1)
 
     # call primary function
-    make_grm(args.vcf_in, var_set, samp_set, args.field, args.algorithm, args.out_prefix)
+    make_grm(args.vcf_in,
+             var_set, samp_set,
+             args.field,
+             args.algorithm,
+             args.znorm,
+             args.out_prefix)
 
     # close the files
     args.vcf_in.close()
