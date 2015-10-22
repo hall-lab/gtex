@@ -91,6 +91,10 @@ def scale_gt(vcf_in, var_list, samp_set, field, scale_range):
         shift = min_fmt
         # print scalar, shift
 
+        # if scalar == 0:
+        #     print line.rstrip()
+        #     print fmt_list.rstrip()
+
         # print 'fmt', fmt_list
 
         fmt_scaled = [(float(x) - shift) / scalar for x in fmt_list]
