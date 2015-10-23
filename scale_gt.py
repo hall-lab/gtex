@@ -82,33 +82,48 @@ def scale_gt(vcf_in, var_list, samp_set, field, scale_range):
             fmt_str = v[i].split(':')[field_idx]
             fmt_list.append(fmt_str)
 
-        min_fmt = np.min([float(x) for x in fmt_list if x != "."])
-        max_fmt = np.max([float(x) for x in fmt_list if x != "."])
-        # print 'min_fmt', min_fmt
-        # print 'max_fmt', max_fmt
-        
-        scalar = (max_fmt - min_fmt) / 2.0
-        shift = min_fmt
-        # print scalar, shift
+        # ensure that there are informative calls in dataset
+        if set(fmt_list) != set(['.']):
+            min_fmt = np.min([float(x) for x in fmt_list if x != "."])
+            max_fmt = np.max([float(x) for x in fmt_list if x != "."])
+            # print 'min_fmt', min_fmt
+            # print 'max_fmt', max_fmt
 
-        # if scalar == 0:
-        #     print line.rstrip()
-        #     print fmt_list.rstrip()
+            scalar = (max_fmt - min_fmt) / (scale_range[1] - scale_range[0])
+            shift = min_fmt - scale_range[0]
+            # print scalar, shift
 
-        # print 'fmt', fmt_list
+            # if scalar == 0:
+            #     print line.rstrip()
+            #     print fmt_list.rstrip()
 
-        fmt_scaled = [(float(x) - shift) / scalar for x in fmt_list]
+            # print 'fmt', fmt_list
 
-        # print 'scaled', fmt_scaled
+            # np.seterr(all='raise')
+            # print "scalar", scalar, min_fmt, max_fmt, v[:5], set(fmt_list)
+            fmt_scaled = []
+            for x in fmt_list:
+                if x == "." or scalar == 0:
+                    fmt_scaled.append(".")
+                else:
+                    fmt_scaled.append((float(x) - shift) / scalar)
 
-        # print 'min_scaled', np.min([float(x) for x in fmt_scaled if x != "."])
-        # print 'max_scaled', np.max([float(x) for x in fmt_scaled if x != "."])
+            # fmt_scaled = [(float(x) - shift) / scalar for x in fmt_list]
 
-        for i in samp_cols:
-            # print 'before', v[i]
-            fmt_split = v[i].split(':')
-            fmt_split[field_idx] = "%0.6f" % fmt_scaled[i - 9]
-            v[i] = ':'.join(fmt_split)
+            # print 'scaled', fmt_scaled
+
+            # print 'min_scaled', np.min([float(x) for x in fmt_scaled if x != "."])
+            # print 'max_scaled', np.max([float(x) for x in fmt_scaled if x != "."])
+
+            for i in samp_cols:
+                # print 'before', v[i]
+                fmt_split = v[i].split(':')
+                scaled_value = fmt_scaled[i - 9]
+                if scaled_value == ".":
+                    fmt_split[field_idx] = scaled_value
+                else:
+                    fmt_split[field_idx] = "%0.6f" % scaled_value
+                v[i] = ':'.join(fmt_split)
         
         print '\t'.join(v)
 
