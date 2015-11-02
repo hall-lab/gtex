@@ -70,7 +70,8 @@ def visscher(X, N, p, j, k):
 
     for i in xrange(N):
         if (len(set(X[i])) != 1
-            and  X[i][j] != -1 and X[i][k] != -1):
+            and  X[i][j] != -1 and X[i][k] != -1
+            and p[i] > 0 and p[i] < 1):
             num_obs += 1
 
             gr += (X[i][j] - 2 * p[i]) * (X[i][k] - 2 * p[i]) / ( 2 * p[i] * (1 - p[i]))
