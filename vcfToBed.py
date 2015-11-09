@@ -38,6 +38,9 @@ def vcf_to_bed(vcf_file):
     # read input VCF
     for line in vcf_file:
         if line[0] == '#':
+            if line[:13] == '##fileformat=':
+                print '##fileformat=BEDv0.2'
+                continue
             if line[1] != '#':
                 vcf_samples = line.rstrip().split('\t')[9:]
                 print '\t'.join(['#CHROM',
@@ -70,6 +73,7 @@ def vcf_to_bed(vcf_file):
             chrom = v[0]
             start = int(v[1]) - 1
             end = int(v[1])
+            # event = v[2]
             event = info['EVENT']
             bed = [chrom, start, end, event]
             bed_list.append(bed)
