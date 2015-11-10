@@ -53,8 +53,9 @@ zcat /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.
     | bgzip -c \
     > /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.introns.bed.gz
 
-# ------------------------------------
 
+# ------------------------------------
+# WARNING: these are based soley on histone marks (not chip or FAIRE-seq data) and are now abandoned (2015-11-10)
 # chromHMM tracks from http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeBroadHmm/
 for TRACK in \
     http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeBroadHmm/wgEncodeBroadHmmGm12878HMM.bed.gz \
@@ -69,7 +70,7 @@ for TRACK in \
 do
     echo $TRACK
     TRACKBASE=`basename $TRACK`
-    curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeBroadHmm/wgEncodeBroadHmmGm12878HMM.bed.gz \
+    curl -s $TRACK \
         | gzip -cdfq \
         | sed 's/^chr//g' \
         | sort -k1,1V -k2,2n -k3,3n \
@@ -78,7 +79,7 @@ do
 done
 
 # merge into a single track of enhancers
-zcat chromHMM_tissues/wgEncodeBroadHmm*.bed.gz \
+zcat wgEncodeBroadHmm*.bed.gz \
     | awk '$4~"Enhancer"' \
     | sort -k1,1V -k2,2n -k3,3n | bedtools merge -c 4 -o distinct \
     | bgzip -c \
@@ -103,13 +104,10 @@ less /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/vista.enhanc
 curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeRegDnaseClustered/wgEncodeRegDnaseClusteredV3.bed.gz | gzip -cdfq | awk '{ gsub("^chr","",$1); print }' OFS="\t" | bgzip -c > wgEncodeRegDnaseClusteredV3.bed.gz
 curl -OL http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeRegDnaseClustered/wgEncodeRegDnaseClusteredSources.tab
 
-
 # ---------------------------------------------
 # Mobile elements
-# -------------------------------------
 # 2015-06-05
 # generate repeat elements track (http://genome.ucsc.edu/cgi-bin/hgTables)
-
 # less than 200 millidiv
 curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/rmsk.txt.gz \
      | gzip -cdfq \
@@ -126,9 +124,108 @@ curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/rmsk.txt.gz \
      | bgzip -c > repeatMasker.ancient.gte200millidiv.b37.sorted.bed.gz
 tabix -p bed repeatMasker.ancient.gte200millidiv.b37.sorted.bed.gz
 
-# extract only the SINEs LINEs and SVAs from the 
+# extract only the SINEs LINEs and SVAs from the
 zcat repeatMasker.recent.lt200millidiv.b37.sorted.bed.gz | awk '$4~"LINE" || $4~"SINE" || $4~"SVA"' \
     | bgzip -c > repeatMasker.recent.lt200millidiv.LINE_SINE_SVA.b37.sorted.bed.gz
+
+# ----------------------------------------------
+# ENCODE (PSU, Yue Lab) predicted enhancers
+# http://promoter.bx.psu.edu/ENCODE/download.html
+wget http://promoter.bx.psu.edu/ENCODE/predicted_enhancer_human.tar.gz
+tar -zxvf predicted_enhancer_human.tar.gz
+
+wget http://promoter.bx.psu.edu/ENCODE/predicted_promoter_human.tar.gz
+tar -zxvf predicted_promoter_human.tar.gz
+
+# ----------------------------------------------
+# ENCODE enhancers
+# https://www.encodeproject.org/data/annotations/
+
+# Distal H3K27ac annotations (cell type specific) 
+wget https://www.encodeproject.org/files/ENCFF786PWS/@@download/ENCFF786PWS.bigBed
+
+
+
+
+
+
+
+
+# http://genome.ucsc.edu/ENCODE/downloads.html
+
+# ----------------------------------
+# ENCODE TFBS
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeRegTfbsClustered/wgEncodeRegTfbsClusteredWithCellsV3.bed.gz
+
+
+# -------------------------------------
+# ENCODE genome segmentations (chromHMM)
+# http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/
+# TSS   Bright Red  Predicted promoter region including TSS
+# PF    Light Red   Predicted promoter flanking region
+# E Orange  Predicted enhancer
+# WE    Yellow  Predicted weak enhancer or open chromatin cis regulatory element
+# CTCF  Blue    CTCF enriched element
+# T Dark Green  Predicted transcribed region
+# R Gray    Predicted Repressed or Low Activity region
+
+mkdir -p encode.segmentation
+cd encode.segmentation
+for TRACK in http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationChromhmmGm12878.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationChromhmmH1hesc.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationChromhmmHelas3.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationChromhmmHepg2.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationChromhmmHuvec.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationChromhmmK562.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationCombinedGm12878.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationCombinedH1hesc.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationCombinedHelas3.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationCombinedHepg2.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationCombinedHuvec.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationCombinedK562.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationSegwayGm12878.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationSegwayH1hesc.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationSegwayHelas3.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationSegwayHepg2.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationSegwayHuvec.bed.gz \
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/wgEncodeAwgSegmentationSegwayK562.bed.gz
+do
+    echo $TRACK
+    TRACKBASE=`basename $TRACK`
+    curl -s $TRACK \
+        | gzip -cdfq \
+        | sed 's/^chr//g' \
+        | sort -k1,1V -k2,2n -k3,3n \
+        | bgzip -c \
+        > $TRACKBASE
+done
+
+# union of elements
+mkdir -p union
+for ELEMENT in CTCF T R WE PF TSS E
+do
+    echo $ELEMENT
+    zcat wgEncodeAwgSegmentationCombined*.bed.gz \
+        | awk -v ELEMENT=$ELEMENT '$4==ELEMENT' \
+        | sort -k1,1V -k2,2n -k3,3n | bedtools merge -c 4 -o distinct \
+        | bgzip -c \
+        > union/wgEncodeAwgSegmentationCombined.union.$ELEMENT.bed.gz
+done
+
+# intersection of elements
+mkdir -p intersection
+for ELEMENT in CTCF T R WE PF TSS E
+do
+    echo $ELEMENT
+    zcat wgEncodeAwgSegmentationCombined*.bed.gz \
+        | awk -v ELEMENT=$ELEMENT '$4==ELEMENT' \
+        | sort -k1,1V -k2,2n -k3,3n | bedtools merge -c 4 -o distinct \
+        | bgzip -c \
+        > union/wgEncodeAwgSegmentationCombined.union.$ELEMENT.bed.gz
+done
+
+
+
 
 
 
