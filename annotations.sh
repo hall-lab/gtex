@@ -53,7 +53,6 @@ zcat /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.
     | bgzip -c \
     > /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.introns.bed.gz
 
-
 # ------------------------------------
 
 # chromHMM tracks from http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeBroadHmm/
@@ -130,6 +129,8 @@ tabix -p bed repeatMasker.ancient.gte200millidiv.b37.sorted.bed.gz
 # extract only the SINEs LINEs and SVAs from the 
 zcat repeatMasker.recent.lt200millidiv.b37.sorted.bed.gz | awk '$4~"LINE" || $4~"SINE" || $4~"SVA"' \
     | bgzip -c > repeatMasker.recent.lt200millidiv.LINE_SINE_SVA.b37.sorted.bed.gz
+
+
 
 
 
