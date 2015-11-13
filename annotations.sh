@@ -216,15 +216,42 @@ done
 mkdir -p intersection
 for ELEMENT in CTCF T R WE PF TSS E
 do
-    echo $ELEMENT
-    zcat wgEncodeAwgSegmentationCombined*.bed.gz \
-        | awk -v ELEMENT=$ELEMENT '$4==ELEMENT' \
-        | sort -k1,1V -k2,2n -k3,3n | bedtools merge -c 4 -o distinct \
+    for CELL in Gm12878 H1hesc Helas3 Hepg2 Huvec K562
+    do
+        zcat wgEncodeAwgSegmentationCombined$CELL.bed.gz \
+            | awk -v ELEMENT=$ELEMENT -v CELL=$CELL '{ if ($4==ELEMENT) print $1,$2,$3,$4,CELL }' OFS="\t"
+    done | sort -k1,1V -k2,2n -k3,3n | bedtools merge -c 4,5,5 -o distinct,distinct,count_distinct \
         | bgzip -c \
-        > union/wgEncodeAwgSegmentationCombined.union.$ELEMENT.bed.gz
+        > intersection/wgEncodeAwgSegmentationCombined.intersect.$ELEMENT.bed.gz
 done
 
+# get those in at least 2 tissues
+MIN_TISSUES=2
+for ELEMENT in CTCF T R WE PF TSS E
+do
+    zcat intersection/wgEncodeAwgSegmentationCombined.intersect.$ELEMENT.bed.gz \
+        | awk -v MIN_TISSUES=$MIN_TISSUES '$NF>=2' \
+        | bgzip -c \
+        > intersection/wgEncodeAwgSegmentationCombined.intersect.min_tissues_$MIN_TISSUES.$ELEMENT.bed.gz
+done
 
+# ---------------------------------------------
+# oreganno literature curated enhancers
+curl -s http://hgdownload.cse.ucsc.edu/goldenpath/hg19/database/oreganno.txt.gz \
+    | gzip -cdfq \
+    | awk '{ gsub("^chr", "", $2); print }' OFS="\t" \
+    | cut -f 2- \
+    | sort -k1,1V -k2,2n -k3,3n \
+    | bgzip -c \
+    > oreganno_b37.bed.gz
+    
+    | less
+
+curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/rmsk.txt.gz \
+     | gzip -cdfq \
+     | awk '{ gsub("^chr", "", $6); if ($3<200) print $6,$7,$8,$12"|"$13"|"$11,$3,$10 }' OFS="\t" \
+     | sort -k1,1V -k2,2n -k3,3n \
+     | bgzip -c > repeatMasker.recent.lt200millidiv.b37.sorted.bed.gz
 
 
 
