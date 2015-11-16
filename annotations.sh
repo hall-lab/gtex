@@ -253,6 +253,13 @@ curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/rmsk.txt.gz \
      | sort -k1,1V -k2,2n -k3,3n \
      | bgzip -c > repeatMasker.recent.lt200millidiv.b37.sorted.bed.gz
 
+# -------------------------------------------
+# funseq sensitive regions
+curl -s http://archive.gersteinlab.org/funseq2.1.0_data/sensitive.bed \
+    | awk '{ gsub("^chr", "", $1); print }' OFS="\t" \
+    | sort -k1,1V -k2,2n -k3,3n \
+    | bgzip -c \
+    > funseq-2.1.0.sensitive.bed.gz
 
 
 
