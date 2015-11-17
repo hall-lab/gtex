@@ -23,6 +23,7 @@ description: continuous ld")
     parser.add_argument('-v', '--variants', metavar='FILE', dest='variants_file', type=argparse.FileType('r'), default=None, required=False, help='list of variants to include')
     parser.add_argument('-s', '--samples', metavar='FILE', dest='samples_file', type=argparse.FileType('r'), default=None, required=False, help='list of samples to include')
     parser.add_argument('-f', '--field', metavar='STR', dest='field', default='GT', help='specify genotyping format field [GT]')
+    parser.add_argument('-a', '--alg', metavar='STR', dest='alg', required=True, type=str, help="LD algorithm ('r', 'r2')")
     # parser.add_argument('-c', '--covar', metavar='FILE', dest='covar', type=argparse.FileType('r'), default=None, required=True, help='tab delimited file of covariates')
     # parser.add_argument('-v', '--max_var', metavar='FLOAT', dest='max_var', type=float, default=0.1, help='maximum genotype variance explained by covariates for variant to PASS filtering [0.1]')
 
@@ -40,7 +41,7 @@ description: continuous ld")
     return args
 
 # primary function
-def ld_continuous(vcf_in, var_list, samp_set, field):
+def ld_continuous(vcf_in, var_list, samp_set, field, alg):
     X = {} # dict of genotypes for each sample, key is variant id
     # var_ids = []
     samp_cols = []
@@ -123,8 +124,13 @@ def ld_continuous(vcf_in, var_list, samp_set, field):
             R[j][i] = r_value
 
             # print var_list[i], var_list[j], r_value
-    for i in xrange(len(R)):
-        print '\t'.join(['%0.6g' % x ** 2 for x in R[i]])
+    if alg == 'r':
+        for i in xrange(len(R)):
+            print '\t'.join(['%0.6g' % x for x in R[i]])
+    elif alg == 'r2':
+        for i in xrange(len(R)):
+            print '\t'.join(['%0.6g' % x ** 2 for x in R[i]])
+
 
     return
 
@@ -150,8 +156,13 @@ def main():
             samp_set.add(v[0])
         args.samples_file.close()
 
+    # parse algorithm
+    if args.alg not in ('r', 'r2'):
+        sys.stderr.write("\nError: algorithm '%s' not supported. Must be 'r' or 'r2'\n\n" % args.alg)
+        exit(1)
+
     # call primary function
-    ld_continuous(args.vcf_in, var_list, samp_set, args.field)
+    ld_continuous(args.vcf_in, var_list, samp_set, args.field, args.alg)
 
     # close the files
     args.vcf_in.close()
