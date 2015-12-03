@@ -18,6 +18,15 @@ zcat /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.
     | bgzip -c \
     > /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.genes.bed.gz
 
+# make BED file of gene with strands
+zcat /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.annotation.gtf.gz \
+    | awk '$3=="transcript"' \
+    | awk '{ gsub("^chr","",$1); gsub("[\";]","",$10); print $1,$4-1,$5,$10,$7}' OFS="\t" \
+    | awk '{ if ($2<0) $2=0; print }' OFS="\t" \
+    | sort -k1,1V -k2,2n -k3,3n \
+    | bgzip -c \
+    > /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.genes.with_strand.bed.gz
+
 # make bed file of exons
 zcat /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.annotation.gtf.gz \
     | awk '$3=="exon"' \
