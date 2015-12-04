@@ -19,6 +19,7 @@ author: " + __author__ + "\n\
 version: " + __version__ + "\n\
 description: convert SV VCF to BED file")
     parser.add_argument(metavar='vcf', dest='input_vcf', nargs='?', type=argparse.FileType('r'), default=None, help='VCF input (default: stdin)')
+    parser.add_argument('-m', dest='inv_multi', action='store_true', default=None, help='represent INV as multi line')
 
     # parse the arguments
     args = parser.parse_args()
@@ -34,7 +35,7 @@ description: convert SV VCF to BED file")
     return args
 
 # primary function
-def vcf_to_bed(vcf_file):
+def vcf_to_bed(inv_multi, vcf_file):
     # read input VCF
     for line in vcf_file:
         if line[0] == '#':
@@ -81,12 +82,12 @@ def vcf_to_bed(vcf_file):
             chrom = v[0]
             start = int(v[1]) - 1
             end = int(v[1])
-            # event = v[2]
-            event = info['EVENT']
+            event = v[2]
+            # event = info['EVENT']
             bed = [chrom, start, end, event]
             bed_list.append(bed)
 
-        elif info['SVTYPE'] == 'INV':
+        elif info['SVTYPE'] == 'INV' and inv_multi:
             chrom_1 = v[0]
             start_1 = int(v[1])
             end_1 = int(v[1]) + 1
@@ -123,7 +124,7 @@ def main():
     args = get_args()
 
     # call primary function
-    vcf_to_bed(args.input_vcf)
+    vcf_to_bed(args.inv_multi, args.input_vcf)
 
     # close the files
     args.input_vcf.close()
