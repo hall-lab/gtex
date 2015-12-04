@@ -24,6 +24,7 @@ description: continuous ld")
     parser.add_argument('-s', '--samples', metavar='FILE', dest='samples_file', type=argparse.FileType('r'), default=None, required=False, help='list of samples to include')
     parser.add_argument('-f', '--field', metavar='STR', dest='field', default='GT', help='specify genotyping format field [GT]')
     parser.add_argument('-a', '--alg', metavar='STR', dest='alg', required=True, type=str, help="LD algorithm ('r', 'r2')")
+    parser.add_argument('-I', '--index', metavar='STR', dest='index', required=False, type=str, help="get LD of each variant against a single index variant")
     # parser.add_argument('-c', '--covar', metavar='FILE', dest='covar', type=argparse.FileType('r'), default=None, required=True, help='tab delimited file of covariates')
     # parser.add_argument('-v', '--max_var', metavar='FLOAT', dest='max_var', type=float, default=0.1, help='maximum genotype variance explained by covariates for variant to PASS filtering [0.1]')
 
@@ -41,7 +42,7 @@ description: continuous ld")
     return args
 
 # primary function
-def ld_continuous(vcf_in, var_list, samp_set, field, alg):
+def ld_continuous(vcf_in, var_list, samp_set, field, alg, index_var):
     X = {} # dict of genotypes for each sample, key is variant id
     # var_ids = []
     samp_cols = []
@@ -105,32 +106,57 @@ def ld_continuous(vcf_in, var_list, samp_set, field, alg):
         sys.stderr.write("Warning, missing variants\n")
         exit(1)
 
-    # empty array of r values (correlation)
-    R = [[0.0] * len(var_list) for i in xrange(len(var_list))]
+    if index_var is None:
+        # empty array of r values (correlation)
+        R = [[0.0] * len(var_list) for i in xrange(len(var_list))]
 
-    for i in xrange(len(var_list)):
-        for j in xrange(i,len(var_list)):
+        for i in xrange(len(var_list)):
+            for j in xrange(i,len(var_list)):
+                # extract the variant pair from the dictionary
+                var_pair = np.array([X[var_list[i]], X[var_list[j]]])
+
+                # print var_pair
+
+                # calculate regression
+                (slope, intercept, r_value, p_value, std_err) = stats.linregress(var_pair)
+
+                # print 'r_value:', r_value
+
+                R[i][j] = r_value
+                R[j][i] = r_value
+
+                # print var_list[i], var_list[j], r_value
+
+        # print output
+        if alg == 'r':
+            for i in xrange(len(R)):
+                print '\t'.join(['%0.6g' % x for x in R[i]])
+        elif alg == 'r2':
+            for i in xrange(len(R)):
+                print '\t'.join(['%0.6g' % x ** 2 for x in R[i]])
+
+    # test against a single variant
+    else:
+        R_index_var = [None] * len(var_list)
+        # for i in var_list.index(index_var):
+        i =  var_list.index(index_var)
+        for j in xrange(len(var_list)):
             # extract the variant pair from the dictionary
             var_pair = np.array([X[var_list[i]], X[var_list[j]]])
-
-            # print var_pair
 
             # calculate regression
             (slope, intercept, r_value, p_value, std_err) = stats.linregress(var_pair)
 
-            # print 'r_value:', r_value
+            R_index_var[j] = r_value
 
-            R[i][j] = r_value
-            R[j][i] = r_value
+        # print output
+        for j in xrange(len(R_index_var)):
+            if alg == 'r':
+                value = R_index_var[j]
+            elif alg == 'r2':
+                value = R_index_var[j] ** 2
 
-            # print var_list[i], var_list[j], r_value
-    if alg == 'r':
-        for i in xrange(len(R)):
-            print '\t'.join(['%0.6g' % x for x in R[i]])
-    elif alg == 'r2':
-        for i in xrange(len(R)):
-            print '\t'.join(['%0.6g' % x ** 2 for x in R[i]])
-
+            print "%s\t%s\t%0.6g" % (var_list[j], index_var, value)
 
     return
 
@@ -162,7 +188,7 @@ def main():
         exit(1)
 
     # call primary function
-    ld_continuous(args.vcf_in, var_list, samp_set, args.field, args.alg)
+    ld_continuous(args.vcf_in, var_list, samp_set, args.field, args.alg, args.index)
 
     # close the files
     args.vcf_in.close()
