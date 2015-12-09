@@ -256,11 +256,6 @@ curl -s http://hgdownload.cse.ucsc.edu/goldenpath/hg19/database/oreganno.txt.gz 
     
     | less
 
-curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/rmsk.txt.gz \
-     | gzip -cdfq \
-     | awk '{ gsub("^chr", "", $6); if ($3<200) print $6,$7,$8,$12"|"$13"|"$11,$3,$10 }' OFS="\t" \
-     | sort -k1,1V -k2,2n -k3,3n \
-     | bgzip -c > repeatMasker.recent.lt200millidiv.b37.sorted.bed.gz
 
 # -------------------------------------------
 # funseq:
