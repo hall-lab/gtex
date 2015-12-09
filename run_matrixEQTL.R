@@ -9,32 +9,45 @@
 # print usage
 usage <- function() {
     cat(
-          'usage: run_matrixEQTL.R <tissue> <directory>
+          'usage: run_matrixEQTL.R <cis distance> <tissue> <directory> <out>
 run_matrixEQTL.R
 author: Colby Chiang (colbychiang@wustl.edu)
+    cis distance cis distance
     tissue       tissue
     directory    directory for input and output
+    out          prefix for output file
 ')
 }
 
 # Draw a histogram from a text file
 args <- commandArgs(trailingOnly=TRUE)
-TISSUE <- args[1]
-DIR <- args[2]
+CIS_DISTANCE <- as.numeric(args[1])
+TISSUE <- args[2]
+DIR <- args[3]
+OUT_PREFIX <- args[4]
 
 # Check input args
+if (is.na(CIS_DISTANCE)) {
+  usage()
+  quit(save='no', status=1)
+}
 if (is.na(TISSUE)) {
-    usage()
-      quit(save='no', status=1)
+  usage()
+  quit(save='no', status=1)
 }
 if (is.na(DIR)) {
-    usage()
-      quit(save='no', status=1)
+  usage()
+  quit(save='no', status=1)
 }
+if (is.na(OUT_PREFIX)) {
+  usage()
+  quit(save='no', status=1)
+}
+    
 
 # source("Matrix_eQTL_R/Matrix_eQTL_engine.r");
 # install.packages("MatrixEQTL")
-install.packages('/gscmnt/gc2719/halllab/users/cchiang/src/MatrixEQTL', repos = NULL, type="source")
+## install.packages('/gscmnt/gc2719/halllab/users/cchiang/src/MatrixEQTL', repos = NULL, type="source")
 library('MatrixEQTL')
 
 ## Location of the package with the data files.
@@ -48,8 +61,7 @@ useModel = modelLINEAR; # modelANOVA, modelLINEAR, or modelLINEAR_CROSS
 
 # Genotype file name
 SNP_file_name = paste0(base.dir, "/", TISSUE, ".sv.scaled.sup_10_samp.txt");
-# less Lung.varsloc.txt.gz  | awk 'NR==1 { print $0"\tpos2"; next } { print $1,$2,$3,$3+100 }' OFS="\t" | gzip -c > Lung.varsloc.ext.txt.gz
-snps_location_file_name = paste0(base.dir, "/", TISSUE, ".varsloc.ext.txt.gz");
+snps_location_file_name = paste0(base.dir, "/", TISSUE, ".varsloc.txt.gz");
 
 # Gene expression file name
 expression_file_name = paste0(base.dir, "/", TISSUE, ".expr.txt");
@@ -61,13 +73,13 @@ gene_location_file_name = "/gscmnt/gc2719/halllab/users/cchiang/projects/gtex/da
 covariates_file_name = paste0(base.dir, "/", TISSUE, ".covariates.txt");
 
 # Output file name
-output_file_name_cis = paste0(base.dir, "/", TISSUE, ".cis_eqtl.txt");
-output_file_name_tra = paste0(base.dir, "/", TISSUE, ".trans_eqtl.txt");
+output_file_name_cis = paste0(OUT_PREFIX, ".cis_eqtl.txt");
+output_file_name_tra = paste0(OUT_PREFIX, ".trans_eqtl.txt");
 
 # Only associations significant at this level will be saved
 ## pvOutputThreshold_cis = 1;
 pvOutputThreshold_cis = 1e-2;
-pvOutputThreshold_tra = 0;
+pvOutputThreshold_tra = 1e-5;
 ## pvOutputThreshold_tra = 1e-3;
 
 
@@ -77,8 +89,8 @@ errorCovariance = numeric();
 # errorCovariance = read.table("Sample_Data/errorCovariance.txt");
 
 # Distance for local gene-SNP pairs
-cisDist = 1e6;
-## cisDist = 1;
+## cisDist = 1e6;
+cisDist = CIS_DISTANCE;
 
 ## Load genotype data
 
@@ -135,21 +147,21 @@ me = Matrix_eQTL_main(
     genepos = genepos,
     cisDist = cisDist,
     pvalue.hist = "qqplot",
-    min.pv.by.genesnp = FALSE,
+    min.pv.by.genesnp = TRUE,
     noFDRsaveMemory = FALSE);
 
 # min.pv.by.genesnp = TRUE
 
-unlink(output_file_name_tra);
-unlink(output_file_name_cis);
+## unlink(output_file_name_tra);
+## unlink(output_file_name_cis);
 
 ## Results:
 
 cat('Analysis done in: ', me$time.in.sec, ' seconds', '\n');
 cat('Detected local eQTLs:', '\n');
-show(me$cis$eqtls)
+## show(me$cis$eqtls)
 cat('Detected distant eQTLs:', '\n');
-show(me$trans$eqtls)
+## show(me$trans$eqtls)
 
 ## Plot the Q-Q plot of local and distant p-values
 
