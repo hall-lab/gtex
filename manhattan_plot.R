@@ -52,6 +52,8 @@ colnames(ld) <- c('id', 'index_var', 'r')
 ld$r <- as.numeric(ld$r)
 genes <- read.table(GENE_FILE, stringsAsFactors=F)
 
+
+## print(ld[which(ld[,1]=="9_124422403_G_A_b37"),])
 ## head(ld)
 
 p <- merge(p, ld, by = "id")
