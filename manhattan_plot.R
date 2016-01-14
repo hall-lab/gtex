@@ -11,11 +11,14 @@
 # print usage
 usage <- function() {
   cat(
-    'usage: prog <assoc> <ld>
+    'usage: prog <assoc> <ld> <gene> <title> <gwas_snp> <output>
 author: Colby Chiang (colbychiang@wustl.edu)
     assoc        table of p-value assoc with trait
     ld           ld with index variant
-
+    gene         gene file
+    title        title of plot
+    gwas snp     id of gwas snp
+    output
 ')
     }
 

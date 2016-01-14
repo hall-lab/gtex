@@ -33,6 +33,8 @@ library('GenometriCorr')
 
 test.file <- args[1]
 feature.file <- args[2]
+out.stem <- args[3]
+
 test <- import(test.file)
 feature <- import(feature.file)
 
@@ -45,9 +47,9 @@ gc <- GenometriCorrelation(test, feature, ecdf.area.permut.number=pn.area, mean.
 
 
 print(gc)
-graphical.report(gc, pdffile='~/Desktop/test.pdf')
-visualize(gc, pdffile='~/Desktop/test2.pdf')
+graphical.report(gc, pdffile=paste0(out.stem, '.gc_report.pdf'))
+visualize(gc, pdffile=paste0(out.stem, '.gc_vis.pdf'))
 
 
 
-read.table('/Users/cchiang/research/genomes/GRCh37/human_g1k_v37.sizes.txt')
+## read.table('/Users/cchiang/research/genomes/GRCh37/human_g1k_v37.sizes.txt')
