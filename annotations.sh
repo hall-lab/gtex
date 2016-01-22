@@ -105,7 +105,10 @@ less /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/vista.enhanc
 
 # --------------------------------------------
 # Roadmap epigenomics
+pwd
+# /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations
 
+mkdir -p roadmap
 
 
 # --------------------------------------------
@@ -336,6 +339,41 @@ curl -s http://archive.gersteinlab.org/funseq2.1.0_data/hot.regions.bed \
     | sort -k1,1V -k2,2n -k3,3n \
     | bgzip -c \
     > funseq-2.1.0.hot.regions.bed.gz
+
+
+# -----------------------------------------------------
+# Dragon Enhancers Database
+
+pwd
+# /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations
+
+mkdir -p DENdb
+cd DENdb
+
+wget http://www.cbrc.kaust.edu.sa/dendb/src/ChIP_seq_TF.csv.zip
+wget http://www.cbrc.kaust.edu.sa/dendb/src/dnase.csv.zip
+wget http://www.cbrc.kaust.edu.sa/dendb/src/enhancer_dnase.csv.zip
+wget http://www.cbrc.kaust.edu.sa/dendb/src/enhancers.csv.zip
+wget http://www.cbrc.kaust.edu.sa/dendb/src/enhancer_interactions.tsv.zip
+wget http://www.cbrc.kaust.edu.sa/dendb/src/enhancers_targets.csv.zip
+wget http://www.cbrc.kaust.edu.sa/dendb/src/FANTOM_expression.csv.zip
+wget http://www.cbrc.kaust.edu.sa/dendb/src/tf.csv.zip
+
+# unzip
+ls *.zip | xargs -I{} unzip {}
+
+for FILE in `ls *.csv`
+do
+    FBASE=`basename $FILE .csv`
+    cat $FILE \
+        | tr ',' '\t' \
+        | awk '{ gsub("^chr","",$2); print $2,$3,$4,$1,$5,$6 }' OFS="\t" \
+        | sort -k1,1V -k2,2n -k3,3n \
+        | bedtools merge -c 6,6 -o distinct,count_distinct \
+        | bgzip -c \
+        > $FBASE.bed.gz
+done
+
 
 
 
