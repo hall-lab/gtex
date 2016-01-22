@@ -374,6 +374,21 @@ do
         > $FBASE.bed.gz
 done
 
+# --------------------------------------------------
+# 2016-01-22
+
+# STR track, since our BNDs seem to be enriched in STRs
+curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/rmsk.txt.gz \
+    | gzip -cdfq \
+    | awk '{ gsub("^chr", "", $6); print $6,$7,$8,$12"|"$13"|"$11,$3,$10 }' OFS="\t" \
+    | awk '$4~"^Simple_repeat"' \
+    | sort -k1,1V -k2,2n -k3,3n \
+    | bgzip -c \
+    > repeatMasker.simple_repeat.b37.sorted.bed.gz
+tabix -p bed repeatMasker.simple_repeat.b37.sorted.bed.gz
+
+
+
 
 
 
