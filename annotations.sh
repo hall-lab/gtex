@@ -114,7 +114,42 @@ mkdir -p roadmap
 # --------------------------------------------
 # DNAse hypersensitivity sites
 curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeRegDnaseClustered/wgEncodeRegDnaseClusteredV3.bed.gz | gzip -cdfq | awk '{ gsub("^chr","",$1); print }' OFS="\t" | bgzip -c > wgEncodeRegDnaseClusteredV3.bed.gz
-curl -OL http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeRegDnaseClustered/wgEncodeRegDnaseClusteredSources.tab
+
+# divide these into different scores
+for SCORE in 300 500 750 1000
+do
+    zcat wgEncodeRegDnaseClusteredV3.bed.gz | awk -v SCORE=$SCORE '$5>=SCORE' | bgzip -c > wgEncodeRegDnaseClusteredV3.score_$SCORE.bed.gz
+    tabix wgEncodeRegDnaseClusteredV3.score_$SCORE.bed.gz
+done
+
+# -------------------------------------------------
+# transcription factor binding sites
+
+# schema:
+# 
+#   Database: hg19    Primary Table: wgEncodeRegTfbsClusteredV3    Row Count: 4,380,444   Data last updated: 2013-07-21
+# Format description: BED5+ with two fields having variable number of experiment IDs and values (none zero-valued)
+# field example SQL type    description
+# bin   585 smallint(5) unsigned    Indexing field to speed chromosome range queries.
+# chrom chr1    varchar(255)    Reference sequence chromosome or scaffold
+# chromStart    10073   int(10) unsigned    Start position in chromosome
+# chromEnd  10329   int(10) unsigned    End position in chromosome
+# name  ZBTB33  varchar(255)    Name of item
+# score 354 int(10) unsigned    Score from 0-1000
+# expCount  2   int(10) unsigned    Number of experiment values
+# expNums   204,246 longblob    Comma separated list of experiment numbers
+# expScores 354,138 longblob    Comma separated list of experiment scores
+
+curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeRegTfbsClustered/wgEncodeRegTfbsClusteredV3.bed.gz \
+    | gzip -cdfq | awk '{ gsub("^chr","",$1); print }' OFS="\t" | bgzip -c > wgEncodeRegTfbsClusteredV3.bed.gz
+
+# divide these into different scores
+for SCORE in 300 500 750 1000
+do
+    zcat wgEncodeRegTfbsClusteredV3.bed.gz | awk -v SCORE=$SCORE '$5>=SCORE' | bgzip -c > wgEncodeRegTfbsClusteredV3.score_$SCORE.bed.gz
+    tabix wgEncodeRegTfbsClusteredV3.score_$SCORE.bed.gz
+done
+
 
 # ---------------------------------------------
 # Mobile elements
@@ -171,7 +206,7 @@ http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeRegTfbsClustere
 
 
 # -------------------------------------
-# ENCODE genome segmentations (chromHMM)
+# ENCODE genome segmentations (chromHMM) (current version 2016-01-29)
 # http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeAwgSegmentation/
 # TSS   Bright Red  Predicted promoter region including TSS
 # PF    Light Red   Predicted promoter flanking region
@@ -246,6 +281,13 @@ do
         | bgzip -c \
         > intersection/wgEncodeAwgSegmentationCombined.intersect.min_tissues_$MIN_TISSUES.$ELEMENT.bed.gz
 done
+
+# make a track that combines weak and strong enhancers
+zcat union/wgEncodeAwgSegmentationCombined.union.WE.bed.gz union/wgEncodeAwgSegmentationCombined.union.E.bed.gz \
+    | sort -k1,1V -k2,2n -k3,3n \
+    | bedtools merge -c 4 -o distinct \
+    | bgzip -c \
+    > union/wgEncodeAwgSegmentationCombined.union.WE_plus_E.bed.gz
 
 # ---------------------------------------------
 # oreganno literature curated enhancers
@@ -374,6 +416,18 @@ do
         > $FBASE.bed.gz
 done
 
+# slice the enhancers
+for SCORE in {2..5}
+do
+    zcat enhancers.bed.gz | awk -v SCORE=$SCORE '$5>=SCORE' | bgzip -c > enhancers.score_$SCORE.bed.gz
+done
+
+# slice the dnase
+for SCORE in {2..5}
+do
+    zcat dnase.bed.gz | awk -v SCORE=$SCORE '$5>=SCORE' | bgzip -c > dnase.score_$SCORE.bed.gz
+done
+
 # --------------------------------------------------
 # 2016-01-22
 
@@ -387,8 +441,37 @@ curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/rmsk.txt.gz \
     > repeatMasker.simple_repeat.b37.sorted.bed.gz
 tabix -p bed repeatMasker.simple_repeat.b37.sorted.bed.gz
 
+# STR plus LTR track
+curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/rmsk.txt.gz \
+    | gzip -cdfq \
+    | awk '{ gsub("^chr", "", $6); print $6,$7,$8,$12"|"$13"|"$11,$3,$10 }' OFS="\t" \
+    | awk '$4~"^Simple_repeat" || $4~"^LTR"' \
+    | sort -k1,1V -k2,2n -k3,3n \
+    | bgzip -c \
+    > repeatMasker.simple_repeat_ltr.b37.sorted.bed.gz
+tabix -p bed repeatMasker.simple_repeat_ltr.b37.sorted.bed.gz
+
+# ---------------------
+# better STR track
+wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/simpleRepeat.txt.gz
+zcat simpleRepeat.txt.gz \
+    | awk '{ gsub("^chr", "", $2); print }' OFS="\t" \
+    | cut -f 2- \
+    | sort -k1,1V -k2,2n -k3,3n \
+    | bgzip -c \
+    > simpleRepeat.bed.gz
+tabix -p bed simpleRepeat.bed.gz
+zcat simpleRepeat.bed.gz | bedtools merge | awk '{ print $3-$2 }' | zsum
+# 73061420
 
 
+# ------------------------------------------------
+# seg dups
 
+curl -s http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/genomicSuperDups.txt.gz | gzip -cdfq \
+    | awk '{ gsub("^chr","",$2); gsub("^chr","",$5) ; print $2,$3,$4,$5,$6,$7 }' OFS="\t" \
+    | sort -k1,1V -k2,2n -k3,3n \
+    | bgzip -c \
+    > segdups.bed.gz
 
 
