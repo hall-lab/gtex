@@ -52,6 +52,25 @@ zcat /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.
     | bgzip -c \
     > /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.5kb_downstream_3prime.bed.gz
 
+# make BED file of <= 10kb of TSS
+zcat /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.annotation.gtf.gz \
+    | awk '$3=="gene"' \
+    | awk -v DIST=10000 '{ gsub("^chr","",$1); if ($7=="+") { TSS=$4; PSTART=TSS-DIST/2-1; PEND=TSS } else if ($7=="-") { TSS=$5; PSTART=TSS-1; PEND=TSS+DIST/2 } gsub("[\";]","",$10); print $1,PSTART,PEND,$10}' OFS="\t" \
+    | awk '{ if ($2<0) $2=0; print }' OFS="\t" \
+    | sort -k1,1V -k2,2n -k3,3n \
+    | bgzip -c \
+    > /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.10kb_upstream_TSS.bed.gz
+
+# make BED file of <= 10kb of 3' end
+zcat /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.annotation.gtf.gz \
+    | awk '$3=="gene"' \
+    | awk -v DIST=10000 '{ gsub("^chr","",$1); if ($7=="+") { threePrime=$5; PSTART=threePrime-DIST/2-1; PEND=threePrime } else if ($7=="-") { threePrime=$4; PSTART=threePrime-1; PEND=threePrime+DIST/2 } gsub("[\";]","",$10); print $1,PSTART,PEND,$10}' OFS="\t" \
+    | awk '{ if ($2<0) $2=0; print }' OFS="\t" \
+    | sort -k1,1V -k2,2n -k3,3n \
+    | bgzip -c \
+    > /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.10kb_downstream_3prime.bed.gz
+
+
 # make BED file of introns (in transcript but subtracting the exons)
 zcat /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.annotation.gtf.gz \
     | awk '$3=="transcript"' \
