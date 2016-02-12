@@ -493,4 +493,19 @@ curl -s http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/genomicSuperDups
     | bgzip -c \
     > segdups.bed.gz
 
+# -------------------------------------------------
+# pseudoautosomal region boundaries, based on the following page (accessed 2016-02-12)
+# http://www.ncbi.nlm.nih.gov/assembly/2758/
+# PAR#1 X:60001-2699520
+# PAR#2 X:154931044-155260560
+# PAR#1 Y:10001-2649520
+# PAR#2 Y:59034050-59363566
+
+echo -e "X\t60000\t2699520\tPAR1
+X\t154931043\t155260560\tPAR2
+Y\t10000\t2649520\tPAR1
+Y\t59034049\t59363566\tPAR2" \
+    | sort -k1,1V -k2,2n -k3,3n \
+    | bgzip -c \
+    > par.bed.gz
 
