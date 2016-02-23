@@ -12,6 +12,7 @@ OUTDIR=$2
 # LSB_JOBINDEX=100
 
 # job index
+TITLE=`cat $LIST | sed -n ${LSB_JOBINDEX},${LSB_JOBINDEX}p | cut -f 1`
 EGENE=`cat $LIST | sed -n ${LSB_JOBINDEX},${LSB_JOBINDEX}p | cut -f 2`
 TISSUE=`cat $LIST | sed -n ${LSB_JOBINDEX},${LSB_JOBINDEX}p | cut -f 3`
 
@@ -20,7 +21,7 @@ mkdir -p $OUTDIR
 
 echo -e "$LSB_JOBINDEX\t$EGENE\t$TISSUE"
 
-NOM_ASSOC_FILE=/gscmnt/gc2719/halllab/users/cchiang/projects/gtex/merged_2015-06-26/fastqtl_2016-01-04_low/caviar_scaled_2016-01-05/tissues/$TISSUE/$EGENE/$EGENE.nom.eqtl.txt
+NOM_ASSOC_FILE=/gscmnt/gc2719/halllab/users/cchiang/projects/gtex/merged_2015-06-26/fastqtl_2015-12-16_high/caviar_scaled_2015-12-18/tissues/$TISSUE/$EGENE/$EGENE.nom.eqtl.txt
 # echo $NOM_ASSOC_FILE
 
 # ------------------------------------

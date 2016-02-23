@@ -29,4 +29,4 @@ do
     echo -e "$BED_REGION" \
 	| bedtools intersect -a /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.genes.bed.gz -b stdin -wo \
 	| zapdups -u -k 4,8,10
-done < <(zless $VCF | vawk --header -v NSAMP_MAX=$NSAMP_MAX -v CADD_MIN=$CADD_MIN 'I$NSAMP<=NSAMP_MAX && I$SVSCORE_NOTRUNC>CADD_MIN' | awk '{ if ($0~"^##") next; if ($0~"^#CHROM") { for (i=10;i<=NF;++i) COLSAMP[i]=$i } else { for (i=10;i<=NF;++i) { if ($i~"0/1" || $i~"1/1") print $1,$2,$3,$4,$5,$6,$7,$8,COLSAMP[i] } } }' OFS="\t")
+done < <(zless $VCF | vawk --header -v NSAMP_MAX=$NSAMP_MAX -v CADD_MIN=$CADD_MIN 'I$NSAMP<=NSAMP_MAX && I$SVSCORE_NOTRUNC>=CADD_MIN' | awk '{ if ($0~"^##") next; if ($0~"^#CHROM") { for (i=10;i<=NF;++i) COLSAMP[i]=$i } else { for (i=10;i<=NF;++i) { if ($i~"0/1" || $i~"1/1") print $1,$2,$3,$4,$5,$6,$7,$8,COLSAMP[i] } } }' OFS="\t")
