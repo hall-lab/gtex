@@ -90,12 +90,21 @@ def calc_q(nominal, permutation):
         # from the permutation
         x = (nom.r2) * perm.true_df / (1 - nom.r2)
         p_corr = stats.f.sf(x, 1, perm.true_df)
-        q = (stats.beta.cdf(p_corr, perm.shape1, perm.shape2))
+        pval_beta = (stats.beta.cdf(p_corr, perm.shape1, perm.shape2)) # q-value
 
         # write out
-        print '\t'.join(map(str, [nom.pid, nom.sid, nom.distance, nom.r, nom.nom_pval, nom.beta, q]))
-
-
+        print ' '.join(map(str,
+                           [nom.pid,
+                            perm.nvar,
+                            perm.shape1,
+                            perm.shape2,
+                            perm.true_df,
+                            nom.sid,
+                            nom.distance,
+                            nom.nom_pval,
+                            nom.beta,
+                            'NA',
+                            pval_beta]))
     return
 
 # --------------------------------------
