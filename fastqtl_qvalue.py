@@ -97,7 +97,9 @@ def calc_q(nominal, permutation, format):
 
         # calculate the F-statistic from the Pearson correlation and true
         # degrees of freedom
-        F_stat = (nom.r2) * perm.true_df / (1 - nom.r2)
+        t_stat = perm.true_df ** 0.5 * nom.r / ((1 - nom.r2) ** 0.5)
+        # F_stat = perm.true_df * nom.r2 / (1 - nom.r2)
+        F_stat = t_stat ** 2
         # calculate the corrected p-value
         p_corr = stats.f.sf(F_stat, 1, perm.true_df)
         pval_beta = (stats.beta.cdf(p_corr, perm.shape1, perm.shape2)) # q-value
@@ -121,7 +123,7 @@ def calc_q(nominal, permutation, format):
                                [nom.sid,
                                 nom.pid,
                                 nom.beta,
-                                F_stat ** 0.5,
+                                t_stat,
                                 nom.nom_pval,
                                 pval_beta]))
 
