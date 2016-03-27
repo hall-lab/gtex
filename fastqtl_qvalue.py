@@ -28,6 +28,12 @@ description: compute q-values from FastQTL nominal p-values (stdin) \n\
                         required=True,
                         type=str, default=None,
                         help='FastQTL file of permutation p-values [stdin]')
+    parser.add_argument('-f', '--format',
+                        metavar='STR', dest='format',
+                        type=str, default='fastqtl',
+                        choices=['matrixeqtl', 'fastqtl'],
+                        help='Output format, either matrixeqtl or fastqtl [fastqtl]')
+                        
 
     # parse the arguments
     args = parser.parse_args()
@@ -74,37 +80,55 @@ class Nominal(object):
         self.beta = float(v[5])
 
 # primary function
-def calc_q(nominal, permutation):
+def calc_q(nominal, permutation, format):
     perm_dict = {}
     for line in permutation:
         v = line.rstrip().split(' ')
         perm_dict[v[0]] = Permutation(v)
 
+    # write the header for matrixeqtl
+    if format == 'matrixeqtl':
+        print '\t'.join(['SNP', 'gene', 'beta', 't-stat', 'p-value', 'FDR'])
+    
     for line in nominal:
         v = line.rstrip().split(' ')
         nom = Nominal(v)
         perm = perm_dict[nom.pid]
 
-        # calculate a corrected p-value based on the
-        # Pearson correlation and true degrees of freedom
-        # from the permutation
-        x = (nom.r2) * perm.true_df / (1 - nom.r2)
-        p_corr = stats.f.sf(x, 1, perm.true_df)
+        # calculate the F-statistic from the Pearson correlation and true
+        # degrees of freedom
+        F_stat = (nom.r2) * perm.true_df / (1 - nom.r2)
+        # calculate the corrected p-value
+        p_corr = stats.f.sf(F_stat, 1, perm.true_df)
         pval_beta = (stats.beta.cdf(p_corr, perm.shape1, perm.shape2)) # q-value
 
         # write out
-        print ' '.join(map(str,
-                           [nom.pid,
-                            perm.nvar,
-                            perm.shape1,
-                            perm.shape2,
-                            perm.true_df,
-                            nom.sid,
-                            nom.distance,
-                            nom.nom_pval,
-                            nom.beta,
-                            'NA',
-                            pval_beta]))
+        if format == 'fastqtl':
+            print ' '.join(map(str,
+                               [nom.pid,
+                                perm.nvar,
+                                perm.shape1,
+                                perm.shape2,
+                                perm.true_df,
+                                nom.sid,
+                                nom.distance,
+                                nom.nom_pval,
+                                nom.beta,
+                                'NA',
+                                pval_beta]))
+        elif format == 'matrixeqtl':
+            print '\t'.join(map(str,
+                               [nom.sid,
+                                nom.pid,
+                                nom.beta,
+                                F_stat ** 0.5,
+                                nom.nom_pval,
+                                pval_beta]))
+
+        else:
+            sys.stderr.write('Invalid output format\n')
+            exit(1)
+
     return
 
 # --------------------------------------
@@ -126,7 +150,8 @@ def main():
     # call primary function
     calc_q(
         input_file,
-        permutation_file
+        permutation_file,
+        args.format
         )
 
     # close the files
