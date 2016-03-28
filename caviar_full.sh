@@ -9,33 +9,31 @@ fi
 LIST=$1
 
 # job index
-EGENE=`cat $LIST | sed -n ${LSB_JOBINDEX},${LSB_JOBINDEX}p | cut -f 2`
-TISSUE=`cat $LIST | sed -n ${LSB_JOBINDEX},${LSB_JOBINDEX}p | cut -f 3`
+EGENE=`zless $LIST | sed -n ${LSB_JOBINDEX},${LSB_JOBINDEX}p | cut -f 1`
+TISSUE=`zless $LIST | sed -n ${LSB_JOBINDEX},${LSB_JOBINDEX}p | cut -f 2`
 
-# echo -e "$LSB_JOBINDEX\t$EGENE\t$TISSUE"
+echo -e "$LSB_JOBINDEX\t$EGENE\t$TISSUE"
+
+# TISSUE=Whole_Blood
+# EGENE=ENSG00000271523.1
 
 # ---------------------------------------
 # get variants
 less tissues/$TISSUE/$EGENE/$EGENE.nom.eqtl.txt \
-    | awk -v EGENE=$EGENE '{ if ($1==EGENE && $2~"b37" && $4!~"nan") print $2,$4 }' OFS="\t" \
-    | sort -k2,2g | head -n 100 | cut -f 1 \
-    > tissues/$TISSUE/$EGENE/top_100_snv_indel.txt
-less tissues/$TISSUE/$EGENE/$EGENE.nom.eqtl.txt \
-    | awk -v EGENE=$EGENE '{ if ($1==EGENE && $2!~"b37" && $4!~"nan") print $2,$4 }' OFS="\t" \
-    | sort -k2,2g | head -n 1 | cut -f 1 \
-    | cat - tissues/$TISSUE/$EGENE/top_100_snv_indel.txt \
+    | awk -v EGENE=$EGENE '{ EVENT=$2; if ($2~"LUMPY_BND") { gsub("_[12]$","",EVENT);} if ($1==EGENE && $5!~"nan") print $0,EVENT }' OFS="\t" \
+    | sort -k5,5g | zapdups -u -k 7 | head -n 100 | cut -f 2 \
     > tissues/$TISSUE/$EGENE/vars.txt
 
 # ---------------------------------------
 # get t-stat
 cat tissues/$TISSUE/$EGENE/$EGENE.nom.eqtl.txt \
-    | cut -f 4,5 \
-    | /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/src/qnorm.py \
-    | paste tissues/$TISSUE/$EGENE/$EGENE.nom.eqtl.txt - \
-    | gzip -c \
-    > tissues/$TISSUE/$EGENE/$EGENE.nom.eqtl.txt.gz
-
-zjoin -w a -a tissues/$TISSUE/$EGENE/$EGENE.nom.eqtl.txt.gz -b tissues/$TISSUE/$EGENE/vars.txt -1 2 -2 1 | cut -f 2,6 \
+    | tr '\t' ' ' \
+    | /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/src/fastqtl_qvalue.py \
+        -p ../tissues/$TISSUE/$TISSUE.joint_sv_gatk.scaled.eqtl.txt.gz \
+        -f matrixeqtl \
+    | sed 1d \
+    | zjoin -a stdin -b tissues/$TISSUE/$EGENE/vars.txt -1 1 -2 1 \
+    | cut -f 1,4 \
     > tissues/$TISSUE/$EGENE/t-stat.txt
 
 # ---------------------------------------
