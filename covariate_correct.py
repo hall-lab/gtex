@@ -35,6 +35,10 @@ description: correct a matrix with residualization by linear regression of covar
                         required=False,
                         type=int, default=0,
                         help='number of leading columns to skip [0]')
+    parser.add_argument('-z', '--z_norm',
+                        dest='z_norm',
+                        action='store_true',
+                        help = 'report row-normalized z-scores')
     # parser.add_argument('-R', '--skip_rows',
     #                     metavar='INT', dest='skip_rows',
     #                     required=False,
@@ -66,7 +70,8 @@ def get_file(filename):
 def resid_lin_reg(
     matrix_file,
     covar_file,
-    skip_cols
+    skip_cols,
+    z_norm
     ):
 
     # read through the covariates
@@ -108,7 +113,17 @@ def resid_lin_reg(
         # Inspect the results
         # print results.summary()
 
-        print '\t'.join(v[:skip_cols] + map(str, results.resid.tolist()))
+        # store residuals of matrix values
+        resid = results.resid.tolist()
+
+        # normalize by z-score if requested
+        if z_norm:
+            corrected = stats.zscore(resid)
+        else:
+            corrected = resid
+
+        # print results
+        print '\t'.join(v[:skip_cols] + map(str, corrected))
 
     return
 
@@ -132,7 +147,8 @@ def main():
     resid_lin_reg(
         input_file,
         covar_file,
-        args.skip_cols
+        args.skip_cols,
+        args.z_norm
         )
 
     # close the files
