@@ -20,8 +20,13 @@ echo -e "$LSB_JOBINDEX\t$EGENE\t$TISSUE"
 # ---------------------------------------
 # get variants
 less tissues/$TISSUE/$EGENE/$EGENE.nom.eqtl.txt \
-    | awk -v EGENE=$EGENE '{ EVENT=$2; if ($2~"LUMPY_BND") { gsub("_[12]$","",EVENT);} if ($1==EGENE && $5!~"nan") print $0,EVENT }' OFS="\t" \
+    | awk -v EGENE=$EGENE '{ EVENT=$2; if ($2~"LUMPY_BND") { gsub("_[12]$","",EVENT);} if ($1==EGENE && $2~"_b37$" && $5!~"nan") print $0,EVENT }' OFS="\t" \
     | sort -k5,5g | zapdups -u -k 7 | head -n 100 | cut -f 2 \
+    > tissues/$TISSUE/$EGENE/top_100_snv_indel.txt
+less tissues/$TISSUE/$EGENE/$EGENE.nom.eqtl.txt \
+    | awk -v EGENE=$EGENE '{ EVENT=$2; if ($2~"LUMPY_BND") { gsub("_[12]$","",EVENT);} if ($1==EGENE && $2!~"_b37$" && $5!~"nan") print $0,EVENT }' OFS="\t" \
+    | sort -k5,5g | zapdups -u -k 7 | head -n 1 | cut -f 2 \
+    | cat - tissues/$TISSUE/$EGENE/top_100_snv_indel.txt \
     > tissues/$TISSUE/$EGENE/vars.txt
 
 # ---------------------------------------
