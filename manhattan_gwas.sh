@@ -48,7 +48,7 @@ cat $NOM_ASSOC_FILE \
 # get variant locations
 REGION=`zcat /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/data/GTEx_Analysis_2015-01-12/eqtl_data/eQTLInputFiles_genePositions/GTEx_Analysis_2015-01-12_eQTLInputFiles_genePositions.txt.gz | awk -v EGENE=$EGENE -v SLOP=10000000 '{ if ($1==EGENE) { POS_START=$3-SLOP; POS_END=$4+SLOP; if (POS_START<0) POS_START=0; print $2":"POS_START"-"POS_END } }'`
 
-tabix ../tissues/$TISSUE/$TISSUE.joint_sv_gatk.scaled.sup_10_samp.vcf.gz $REGION \
+tabix ../tissues/$TISSUE/$TISSUE.joint_sv_gatk.scaled.sup_10_samp.high_conf.vcf.gz $REGION \
     | zjoin -a stdin -b tissues/$TISSUE/$EGENE/vars.txt -1 3 -2 1 \
     | vcfToBed | cut -f -6 \
     > tissues/$TISSUE/$EGENE/var_locs.bed
