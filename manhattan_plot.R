@@ -105,7 +105,9 @@ forward.y <- -0.6
 reverse.y <- -0.8
 
 # plot the GWAS snp special
-points(logp~start, data=p[p$id==GWAS_SNP,], pch=23, col='red', bg=p[p$id==GWAS_SNP,]$col, cex=2.5, lwd=2)
+GWAS_SNP_VECTOR <- unlist(strsplit(GWAS_SNP, split=","))
+points(logp~start, data=p[p$id %in% GWAS_SNP_VECTOR,], pch=23, col='black', bg=p[p$id %in% GWAS_SNP_VECTOR,]$col, cex=2, lwd=2)
+## points(logp~start, data=p[p$id==GWAS_SNP,], pch=23, col='red', bg=p[p$id==GWAS_SNP,]$col, cex=2.5, lwd=2)
 
 # draw genes
 for (i in 1:nrow(genes)) {
