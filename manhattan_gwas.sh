@@ -15,7 +15,7 @@ then
     MINLD=0
 fi
 
-LSB_JOBINDEX=20
+# LSB_JOBINDEX=20
 
 # job index
 TITLE=`cat $LIST | sed -n ${LSB_JOBINDEX},${LSB_JOBINDEX}p | cut -f 1`
