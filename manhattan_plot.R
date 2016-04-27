@@ -95,7 +95,7 @@ xrange <- abs(max(p$end) - min(p$start))
 xlimits <- c(min(p$start) - 0.05 * xrange, max(p$end) + 0.15 * xrange)
 ylimits <- c(-1,max(p$logp)*1.05)
 
-plot(logp~start, data=p, pch=21, col='black', bg=p$col, cex=1.5, main=TITLE, cex.main=0.6, axes=F, xlim=xlimits, ylim=ylimits, ylab='-log(p)', xlab=paste0('Chromosome ', p$chrom[1], ' position (kb)'))
+plot(logp~start, data=p, pch=21, col='black', bg=p$col, cex=1.5, main=paste(strwrap(TITLE, 90), collapse='\n'), cex.main=0.6, axes=F, xlim=xlimits, ylim=ylimits, ylab='-log(p)', xlab=paste0('Chromosome ', p$chrom[1], ' position (kb)'))
 box()
 axis(2)
 axis(1, at=axTicks(1), labels=axTicks(1)/1e3 )
