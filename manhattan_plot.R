@@ -140,7 +140,7 @@ sv.col <- 'black'
 rect(xleft=sv$start, ybottom=sv$logp - pad, xright=sv$end, ytop=sv$logp + pad, border=sv.col)
 text(sv$start, sv$logp + 2*pad, sv$id, cex=0.6)
 
-legend('topright', rev(paste0((0:(col.res-1))/col.res, '-', (1:col.res)/col.res)), fill=rev(cols), title='abs(R)', cex=0.8)
+legend('topright', rev(paste0((0:(col.res-1))/col.res, '-', (1:col.res)/col.res)), fill=rev(cols), title='abs(R^2)', cex=0.8)
 
 dev.off()
 
