@@ -108,8 +108,12 @@ def vcf_to_bed(inv_multi, event_id, vcf_file):
             
         else:
             chrom = v[0]
-            start = int(v[1])
-            end = int(info['END'])
+            if 'END' in info:
+                start = int(v[1])
+                end = int(info['END'])
+            else:
+                start = int(v[1]) - 1
+                end = int(v[1])
             event = v[2]
             bed = [chrom, start, end, event]
             bed_list.append(bed)
