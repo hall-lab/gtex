@@ -142,7 +142,7 @@ def ld_continuous(vcf_in, var_list, samp_set, field, alg, index_var, labels, col
         # in column format
         if columns:
             for i in xrange(len(R)):
-                for j in xrange(len(R)):
+                for j in xrange(i, len(R)):
                     if alg == 'r':
                         ld = R[i][j]
                     elif alg == 'r2':
