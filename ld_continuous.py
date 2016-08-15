@@ -25,6 +25,7 @@ description: continuous ld")
     parser.add_argument('-f', '--field', metavar='STR', dest='field', default='GT', help='specify genotyping format field [GT]')
     parser.add_argument('-a', '--alg', metavar='STR', dest='alg', required=True, type=str, help="LD algorithm ('r', 'r2')")
     parser.add_argument('-I', '--index', metavar='STR', dest='index', required=False, type=str, help="get LD of each variant against a single index variant")
+    parser.add_argument('-l', '--labels', dest='labels', required=False, action='store_true', help='attach labels to LD matrix')
     # parser.add_argument('-c', '--covar', metavar='FILE', dest='covar', type=argparse.FileType('r'), default=None, required=True, help='tab delimited file of covariates')
     # parser.add_argument('-v', '--max_var', metavar='FLOAT', dest='max_var', type=float, default=0.1, help='maximum genotype variance explained by covariates for variant to PASS filtering [0.1]')
 
@@ -42,10 +43,14 @@ description: continuous ld")
     return args
 
 # primary function
-def ld_continuous(vcf_in, var_list, samp_set, field, alg, index_var):
+def ld_continuous(vcf_in, var_list, samp_set, field, alg, index_var, labels):
     X = {} # dict of genotypes for each sample, key is variant id
     # var_ids = []
     samp_cols = []
+    if len(var_list):
+        has_var_list = True
+    else:
+        has_var_list = False
 
     for line in vcf_in:
         if line[:2] == '##':
@@ -59,8 +64,10 @@ def ld_continuous(vcf_in, var_list, samp_set, field, alg, index_var):
                     samp_cols.append(i)
             continue
         
-        if v[2] not in var_list and len(var_list):
+        if v[2] not in var_list and has_var_list:
             continue
+        else:
+            var_list.append(v[2])        
 
         var_id = v[2]
 
@@ -102,6 +109,9 @@ def ld_continuous(vcf_in, var_list, samp_set, field, alg, index_var):
 
             X[var_id] = gt_list
 
+    if len(var_list)==0:
+        var_list = X.keys()
+
     if len(var_list) != len(X):
         sys.stderr.write("Warning, missing variants\n")
         exit(1)
@@ -128,11 +138,17 @@ def ld_continuous(vcf_in, var_list, samp_set, field, alg, index_var):
                 # print var_list[i], var_list[j], r_value
 
         # print output
+        if labels:
+            print '\t' + '\t'.join(var_list)
         if alg == 'r':
             for i in xrange(len(R)):
+                if labels:
+                    sys.stdout.write(var_list[i] + '\t')
                 print '\t'.join(['%0.6g' % x for x in R[i]])
         elif alg == 'r2':
             for i in xrange(len(R)):
+                if labels:
+                    sys.stdout.write(var_list[i] + '\t')
                 print '\t'.join(['%0.6g' % x ** 2 for x in R[i]])
 
     # test against a single variant
@@ -188,7 +204,7 @@ def main():
         exit(1)
 
     # call primary function
-    ld_continuous(args.vcf_in, var_list, samp_set, args.field, args.alg, args.index)
+    ld_continuous(args.vcf_in, var_list, samp_set, args.field, args.alg, args.index, args.labels)
 
     # close the files
     args.vcf_in.close()
