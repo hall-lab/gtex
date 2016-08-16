@@ -21,6 +21,7 @@ description: convert SV VCF to BED file")
     parser.add_argument(metavar='vcf', dest='input_vcf', nargs='?', type=argparse.FileType('r'), default=None, help='VCF input (default: stdin)')
     parser.add_argument('-m', dest='inv_multi', action='store_true', default=None, help='represent INV as multi line')
     parser.add_argument('-e', dest='event_id', action='store_true', default=None, help='for BND variants, use EVENT field from VCF (if available) for column 4 of BED file')
+    parser.add_argument('-b', '--bnd_span', dest='bnd_span', action='store_true', default=None, help='for BND variants, print BED interval of variant\'s span and add BND_DETAIL to INFO field (sloppily)')
 
     # parse the arguments
     args = parser.parse_args()
@@ -36,7 +37,7 @@ description: convert SV VCF to BED file")
     return args
 
 # primary function
-def vcf_to_bed(inv_multi, event_id, vcf_file):
+def vcf_to_bed(inv_multi, event_id, bnd_span, vcf_file):
     # read input VCF
     for line in vcf_file:
         if line[0] == '#':
@@ -81,13 +82,61 @@ def vcf_to_bed(inv_multi, event_id, vcf_file):
 
         elif info['SVTYPE'] == 'BND':
             chrom = v[0]
+            pos = int(v[1])
             start = int(v[1]) - 1
             end = int(v[1])
             if event_id:
                 event = info['EVENT']
             else:
                 event = v[2]
-            bed = [chrom, start, end, event]
+
+            if bnd_span:
+                distance_threshold = 1e6
+                alt = v[4]
+                if "[" in alt or "]" in alt: # BND
+                    orient = ""
+                    alt_coord = re.findall('[\[\]]([^\[\]]*)[\[\]]', alt)[0].split(':')
+                    alt_chrom = alt_coord[0]
+                    alt_pos = int(alt_coord[1])
+                    if chrom != alt_chrom:
+                        interchrom = True
+                        distance = None
+                    else:
+                        interchrom = False
+                        distance = abs(alt_pos - pos)
+                        start = pos
+                        end = alt_pos
+
+                    if alt.startswith('['):
+                        orient = "INV"
+                    elif alt.startswith(']'):
+                        if pos > alt_pos:
+                            orient = "DEL"
+                        else:
+                            orient = "DUP"
+                    elif alt.endswith('['):
+                        if pos > alt_pos:
+                            orient = "DUP"
+                        else:
+                            orient = "DEL"
+                    elif alt.endswith(']'):
+                        orient = "INV"
+                    bnd_detail = "BND"
+                    if interchrom:
+                        bnd_detail = "INTER_" + bnd_detail
+                    else:
+                        if distance > distance_threshold:
+                            bnd_detail = "DISTANT_" + bnd_detail + "_" + orient
+                        else:
+                            bnd_detail = "LOCAL_" + bnd_detail + "_" + orient
+
+                # add the BND_DETAIL to the info field
+                # note: this is done in a sketchy and illegal way. Not added to the
+                # header and it doesn't check whether the field already exists.
+                info['BND_DETAIL'] = bnd_detail
+                v[7] = v[7] + ';BND_DETAIL=' + bnd_detail
+
+            bed = [chrom, min(start, end), max(start, end), event]
             bed_list.append(bed)
 
         elif info['SVTYPE'] == 'INV' and inv_multi:
@@ -131,7 +180,7 @@ def main():
     args = get_args()
 
     # call primary function
-    vcf_to_bed(args.inv_multi, args.event_id, args.input_vcf)
+    vcf_to_bed(args.inv_multi, args.event_id, args.bnd_span, args.input_vcf)
 
     # close the files
     args.input_vcf.close()
