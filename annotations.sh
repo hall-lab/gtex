@@ -81,6 +81,16 @@ zcat /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.
     | bgzip -c \
     > /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/annotations/gencode.v19.introns.bed.gz
 
+# get gene types
+# http://www.gencodegenes.org/gencode_biotypes.html
+zcat gencode.v19.annotation.gtf.gz \
+    | awk '$0!~"^#" && $3=="transcript"' \
+    | awk '$0~"^#" { next } { split($9,info,";"); for (i=1;i<=length(info);++i) { gsub("^[ ]*","",info[i]); split(info[i],ipair," "); for (j=1;j<=length(ipair);++j) { gsub("\"","",ipair[2]) ; if (ipair[1]=="gene_id") gene_id=ipair[2]; if (ipair[1]=="gene_type") gene_type=ipair[2] } } print gene_id,gene_type }' FS="\t" OFS="\t" \
+    | zjoin -a stdin -b gencode.v19.gene_type.dictionary.txt -1 2 -2 1 \
+    | cut -f -2,4 \
+    | zapdups -u -k 1,2 \
+    | gzip -c \
+    > gencode.v19.gene_type.txt.gz
 
 # ------------------------------------
 # WARNING: these are based soley on histone marks (not chip or FAIRE-seq data) and are now abandoned (2015-11-10)
