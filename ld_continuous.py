@@ -64,16 +64,28 @@ def ld_continuous(vcf_in, var_list, samp_set, field, alg, index_var, labels, col
                 if v[i] in samp_set or len(samp_set) == 0:
                     samp_cols.append(i)
             continue
-        
-        if v[2] not in var_list and has_var_list:
-            continue
+
+        if has_var_list:
+            if v[2] not in var_list:
+                continue
         else:
-            var_list.append(v[2])        
+            var_list.append(v[2])
 
         var_id = v[2]
 
+        # get field index
+        fmt = v[8].split(':')
+        field_idx = -1
+        for i in xrange(len(fmt)):
+            if fmt[i] == field:
+                field_idx = i
+                break
+        # if field_idx == -1:
+        #     sys.stderr.write("Format field '%s' not found for variant %s\n" % (field, v[2]))
+        #     exit(1)
+
         # read the genotypes
-        if field == 'GT':
+        if field == 'GT' or field_idx == -1:
             gt_list = []
             for i in samp_cols:
                 gt_str = v[i].split(':')[0]
@@ -88,16 +100,6 @@ def ld_continuous(vcf_in, var_list, samp_set, field, alg, index_var, labels, col
 
             X[var_id] = gt_list
         else:
-            fmt = v[8].split(':')
-            field_idx = -1
-            for i in xrange(len(fmt)):
-                if fmt[i] == field:
-                    field_idx = i
-                    break
-            if field_idx == -1:
-                sys.stderr.write("Format field '%s' not found for variant %s\n" % (field, v[2]))
-                exit(1)
-
             gt_list = []
             for i in samp_cols:
                 gt_str = v[i].split(':')[field_idx]
