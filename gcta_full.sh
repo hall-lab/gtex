@@ -43,6 +43,7 @@ ESV=`cat tissues/$TISSUE/$EGENE/$EGENE.nom.eqtl.txt | awk '$5!~"nan$"' | awk '$2
 REGION=`zcat /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/data/GTEx_Analysis_2015-01-12/eqtl_data/eQTLInputFiles_genePositions/GTEx_Analysis_2015-01-12_eQTLInputFiles_genePositions.txt.gz | awk -v EGENE=$EGENE -v SLOP=1000000 '{ if ($1==EGENE) { POS_START=$3-SLOP; POS_END=$4+SLOP; if (POS_START<0) POS_START=0; print $2":"POS_START"-"POS_END } }'`
 
 tabix -h $VCF $REGION \
+    | awk '{ if ($0~"^#" || ($3!~"^LUMPY" && $3!~"^GS")) { print; next } $9=$9":DS"; split($9,fmt,":"); if ($3~"^LUMPY") { field="AB"; scalar=2 } if ($3~"^GS_") { field="CN"; scalar=1 } for (i=1;i<=length(fmt);++i) { if (fmt[i]==field) fmt_idx=i } for (i=10;i<=NF;++i) { split($i,gt,":"); $i=$i":"gt[fmt_idx]*scalar } print }' OFS="\t" \
     | vawk --header -v ESV=$ESV '{ if ($3==ESV) { if (I$SVTYPE=="CNV") { print $1,$2,$3,$4,$5,$6,$7,$8,$9,S$*$CN; print $1,$2,$3,$4,$5,$6,$7,$8,$9,S$*$DS; exit } else { print $1,$2,$3,$4,$5,$6,$7,$8,$9,S$*$GT; print $1,$2,$3,$4,$5,$6,$7,$8,$9,S$*$DS; exit } } }' \
     | grep -v '^##' \
     | cut -f 10- \
