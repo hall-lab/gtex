@@ -62,7 +62,7 @@ zjoin -a tissues/$TISSUE/$EGENE/var_locs.bed -b $NOM_ASSOC_FILE -1 4 -2 2 \
 
 # -------------------------------
 # get LD between the SV and the other variants
-SV_ID=`cat $NOM_ASSOC_FILE | awk '$2!~"_b37$"' | awk '{ if ($4!~"nan") print $2,$4 }' OFS="\t" | sort -k2,2g | cut -f 1 | head -n 1`
+SV_ID=`cat $NOM_ASSOC_FILE | awk '$2!~"_b37$"' | awk '{ if ($4!~"nan") print $2,$5 }' OFS="\t" | sort -k2,2g | cut -f 1 | head -n 1`
 echo $SV_ID
 # REGION=`zcat /gscmnt/gc2719/halllab/users/cchiang/projects/gtex/data/GTEx_Analysis_2015-01-12/eqtl_data/eQTLInputFiles_genePositions/GTEx_Analysis_2015-01-12_eQTLInputFiles_genePositions.txt.gz | awk -v EGENE=$EGENE -v SLOP=10000000 '{ if ($1==EGENE) { POS_START=$3-SLOP; POS_END=$4+SLOP; if (POS_START<0) POS_START=0; print $2":"POS_START"-"POS_END } }'`
 
