@@ -29,7 +29,7 @@ mkdir -p $OUTDIR
 
 echo -e "$LSB_JOBINDEX\t$EGENE\t$TISSUE"
 
-NOM_ASSOC_FILE=/gscmnt/gc2719/halllab/users/cchiang/projects/gtex/merged_2015-06-26/fastqtl_2015-12-16_high/caviar_scaled_2015-12-18/tissues/$TISSUE/$EGENE/$EGENE.nom.eqtl.txt
+NOM_ASSOC_FILE=../caviar/tissues/$TISSUE/$EGENE/$EGENE.nom.eqtl.txt
 # echo $NOM_ASSOC_FILE
 
 # ------------------------------------
@@ -56,7 +56,7 @@ tabix ../tissues/$TISSUE/$TISSUE.joint_sv_gatk.scaled.sup_10_samp.high_conf.vcf.
 # ----------------------------------
 # get association with the trait
 zjoin -a tissues/$TISSUE/$EGENE/var_locs.bed -b $NOM_ASSOC_FILE -1 4 -2 2 \
-    | awk 'BEGIN { print "chrom\tstart\tend\tid\tref\talt\tbeta\tpval" } { print $1,$2,$3,$4,$5,$6,$11,$10 }' OFS="\t" \
+    | awk 'BEGIN { print "chrom\tstart\tend\tid\tref\talt\tbeta\tpval" } { print $1,$2,$3,$4,$5,$6,$12,$11 }' OFS="\t" \
     | zapdups -u -k 4 \
     > tissues/$TISSUE/$EGENE/var_assoc.bed
 
